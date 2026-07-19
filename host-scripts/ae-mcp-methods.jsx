@@ -249,31 +249,31 @@
       made.push(makeShapeCircle(comp, prefix + "JP Pop Ring", null, h * 0.34, w * 0.86, h * 0.76, start, end, white, 10));
       made.push(makeShapeRect(comp, prefix + "JP Speed Line A", white, w * 0.18, 14, w * 0.82, h * 0.18, start, end, 7, -18));
       made.push(makeShapeRect(comp, prefix + "JP Speed Line B", pink, w * 0.12, 10, w * 0.9, h * 0.25, start, end, 5, -18));
-      made.push(makeTemplateText(comp, "ポップ / 01", prefix + "JP Label", w * 0.13, h * 0.11, 28, white, start, end, font));
+      made.push(makeTemplateText(comp, "POP / 01", prefix + "JP Label", w * 0.13, h * 0.11, 28, white, start, end, font));
     } else if (purpose === "setup") {
       var i;
       for (i = 0; i < 7; i++) made.push(makeShapeRect(comp, prefix + "JP Rhythm Bar " + i, i % 2 ? white : pink, 22, h * (0.12 + i * 0.018), w * (0.12 + i * 0.045), h * 0.86, start, end, 11, -8));
       made.push(makeShapeCircle(comp, prefix + "JP Rhythm Dot", pink, 46, w * 0.88, h * 0.16, start, end));
-      made.push(makeTemplateText(comp, "リズム / 02", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+      made.push(makeTemplateText(comp, "RHYTHM / 02", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
     } else if (purpose === "explanation") {
       made.push(makeShapeRect(comp, prefix + "JP Data Rail", white, w * 0.22, 12, w * 0.17, h * 0.76, start, end, 6, 0));
       made.push(makeShapeRect(comp, prefix + "JP Data Rail Accent", pink, w * 0.12, 12, w * 0.83, h * 0.76, start, end, 6, 0));
       made.push(makeShapeCircle(comp, prefix + "JP Data Dot A", pink, 34, w * 0.12, h * 0.25, start, end));
       made.push(makeShapeCircle(comp, prefix + "JP Data Dot B", white, 22, w * 0.88, h * 0.35, start, end));
-      made.push(makeTemplateText(comp, "キャッチ / 03", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+      made.push(makeTemplateText(comp, "CATCH / 03", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
     } else if (purpose === "payoff") {
       made.push(makeShapeCircle(comp, prefix + "JP Payoff Ring", null, h * 0.48, w * 0.5, h * 0.5, start, end, pink, 12));
       made.push(makeShapeRect(comp, prefix + "JP Payoff Corner A", white, 90, 18, w * 0.12, h * 0.22, start, end, 9, 35));
       made.push(makeShapeRect(comp, prefix + "JP Payoff Corner B", pink, 90, 18, w * 0.88, h * 0.78, start, end, 9, 35));
       made.push(makeShapeCircle(comp, prefix + "JP Payoff Dot A", white, 30, w * 0.18, h * 0.78, start, end));
       made.push(makeShapeCircle(comp, prefix + "JP Payoff Dot B", pink, 42, w * 0.82, h * 0.22, start, end));
-      made.push(makeTemplateText(comp, "すき / 04", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+      made.push(makeTemplateText(comp, "SUKI / 04", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
     } else if (purpose === "cta") {
       made.push(makeShapeRect(comp, prefix + "JP CTA Button", pink, w * 0.32, 92, w * 0.5, h * 0.84, start, end, 46, 0));
       made.push(makeShapeCircle(comp, prefix + "JP CTA Orb", white, 150, w * 0.14, h * 0.75, start, end));
       made.push(makeShapeRect(comp, prefix + "JP CTA Spark A", pink, 90, 14, w * 0.84, h * 0.19, start, end, 7, 45));
       made.push(makeShapeRect(comp, prefix + "JP CTA Spark B", white, 90, 14, w * 0.84, h * 0.19, start, end, 7, -45));
-      made.push(makeTemplateText(comp, "またね / 05", prefix + "JP Label", w * 0.13, h * 0.14, 28, pink, start, end, font));
+      made.push(makeTemplateText(comp, "MATA NE / 05", prefix + "JP Label", w * 0.13, h * 0.14, 28, pink, start, end, font));
     }
     return made;
   }
@@ -304,6 +304,90 @@
         var scaleTarget = scale.value;
         scale.setValueAtTime(start, [scaleTarget[0] * 0.82, scaleTarget[1] * 0.82]);
         scale.setValueAtTime(Math.min(layer.outPoint, start + d), scaleTarget);
+      }
+    } catch (e) {}
+  }
+
+  function mographKey(property, time, value) {
+    try {
+      property.setValueAtTime(Number(time), value);
+      var keyIndex = property.nearestKeyIndex(Number(time));
+      try {
+        property.setInterpolationTypeAtKey(keyIndex, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+      } catch (e1) {}
+    } catch (e) {}
+  }
+
+  function enableMographMotion(comp, layer) {
+    try { comp.motionBlur = true; } catch (e) {}
+    try { comp.shutterAngle = 180; } catch (e2) {}
+    try { comp.shutterPhase = -90; } catch (e3) {}
+    try { layer.motionBlur = true; } catch (e4) {}
+  }
+
+  function animateMographLayer(layer, start, end, transition, order, purpose, comp, energy) {
+    try {
+      var name = String(layer.name);
+      var span = Math.max(0.75, end - start);
+      var reveal = Math.min(0.42, Math.max(0.16, span * 0.12));
+      var impact = start + reveal * (0.38 + Math.min(0.24, order * 0.035));
+      var settle = start + reveal;
+      var accent = start + span * (0.48 + Math.min(0.1, order * 0.01));
+      var transform = layer.property("ADBE Transform Group");
+      var opacity = transform.property("ADBE Opacity");
+      var position = transform.property("ADBE Position");
+      var scale = transform.property("ADBE Scale");
+      var rotation = transform.property("ADBE Rotate Z");
+      var targetPosition = position.value;
+      var targetScale = scale.value;
+      var targetRotation = rotation.value;
+      var fullFrame = name.indexOf("Hook Accent") !== -1 || name.indexOf("Chapter Accent") !== -1 || name.indexOf("End Screen Background") !== -1 || name.indexOf("Quote Background") !== -1;
+      enableMographMotion(comp, layer);
+      mographKey(opacity, start, 100);
+      if (fullFrame) return;
+      var offsetX = ((order % 2 === 0) ? -1 : 1) * comp.width * (0.045 + Math.min(0.035, energy * 0.03));
+      var offsetY = ((order % 3) - 1) * comp.height * 0.035;
+      if (name.indexOf("Transition Sweep") !== -1) {
+        mographKey(position, start, [-comp.width * 0.12, targetPosition[1]]);
+        mographKey(position, settle, [comp.width * 1.12, targetPosition[1]]);
+        return;
+      }
+      if (name.indexOf("Speed") !== -1 || name.indexOf("Spark") !== -1) {
+        mographKey(position, start, [targetPosition[0] - offsetX * 1.8, targetPosition[1] - offsetY]);
+        mographKey(position, impact, targetPosition);
+        mographKey(position, accent, [targetPosition[0] + offsetX * 0.35, targetPosition[1]]);
+        mographKey(position, settle, targetPosition);
+        mographKey(rotation, start, targetRotation - 12);
+        mographKey(rotation, impact, targetRotation + 5);
+        mographKey(rotation, settle, targetRotation);
+      } else if (name.indexOf("Rhythm") !== -1 || name.indexOf("Rail") !== -1) {
+        mographKey(scale, start, [35, targetScale[1], targetScale[2]]);
+        mographKey(scale, impact, [115, targetScale[1], targetScale[2]]);
+        mographKey(scale, settle, targetScale);
+        mographKey(scale, accent, [targetScale[0] * 0.78, targetScale[1], targetScale[2]]);
+        mographKey(scale, settle + Math.min(0.22, span * 0.08), targetScale);
+      } else if (name.indexOf("Ring") !== -1 || name.indexOf("Orb") !== -1 || name.indexOf("Sun") !== -1 || name.indexOf("Dot") !== -1) {
+        mographKey(scale, start, [25, 25, targetScale[2]]);
+        mographKey(scale, impact, [125, 125, targetScale[2]]);
+        mographKey(scale, settle, targetScale);
+        mographKey(position, start, [targetPosition[0] + offsetX, targetPosition[1] + offsetY]);
+        mographKey(position, settle, targetPosition);
+        mographKey(scale, accent, [targetScale[0] * 1.12, targetScale[1] * 1.12, targetScale[2]]);
+        mographKey(scale, settle + Math.min(0.2, span * 0.06), targetScale);
+      } else {
+        mographKey(position, start, [targetPosition[0] + offsetX, targetPosition[1] + offsetY]);
+        mographKey(position, impact, [targetPosition[0] - offsetX * 0.18, targetPosition[1] - offsetY * 0.2]);
+        mographKey(position, settle, targetPosition);
+        mographKey(scale, start, [targetScale[0] * 0.84, targetScale[1] * 0.84, targetScale[2]]);
+        mographKey(scale, impact, [targetScale[0] * 1.08, targetScale[1] * 1.08, targetScale[2]]);
+        mographKey(scale, settle, targetScale);
+        mographKey(rotation, start, targetRotation - (order % 2 ? 4 : -4));
+        mographKey(rotation, impact, targetRotation + (order % 2 ? 2 : -2));
+        mographKey(rotation, settle, targetRotation);
+      }
+      if (purpose === "hook" || purpose === "payoff") {
+        mographKey(rotation, accent, targetRotation + (order % 2 ? 3 : -3));
+        mographKey(rotation, Math.min(end - 0.05, accent + 0.18), targetRotation);
       }
     } catch (e) {}
   }
@@ -348,10 +432,16 @@
     } else {
       made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: " + id, comp.width / 2, comp.height / 2, Number(args.font_size || 84), white, start, end, font));
     }
-    if (style === "japanese-pop") made = made.concat(makeJapaneseDecor(comp, prefix, String(args.scene_purpose || ""), primary, accent, white, start, end, font));
+    if (style === "japanese-pop") {
+      made.push(makeShapeRect(comp, prefix + "JP Transition Sweep", accent, comp.width * 0.06, comp.height * 1.2, -comp.width * 0.08, comp.height / 2, start, end, 0, 0));
+      made = made.concat(makeJapaneseDecor(comp, prefix, String(args.scene_purpose || ""), primary, accent, white, start, end, font));
+    }
     for (var mi = 0; mi < made.length; mi++) {
-      fadeLayer(made[mi], start, end, Number(args.fade_duration === undefined ? 0.25 : args.fade_duration), !!args.hold_end);
-      applyMotionEntrance(made[mi], start, String(args.transition || "fade"), Number(args.fade_duration || 0.25), comp);
+      if (style === "japanese-pop") animateMographLayer(made[mi], start, end, String(args.transition || "fade"), mi, String(args.scene_purpose || ""), comp, Number(args.energy || 0.86));
+      else {
+        fadeLayer(made[mi], start, end, Number(args.fade_duration === undefined ? 0.25 : args.fade_duration), !!args.hold_end);
+        applyMotionEntrance(made[mi], start, String(args.transition || "fade"), Number(args.fade_duration || 0.25), comp);
+      }
     }
     try { if (comp.markerProperty) comp.markerProperty.setValueAtTime(start, new MarkerValue(id + " | " + (args.scene_id || "scene"))); } catch (e2) {}
     return { template_id: id, comp: comp.name, layers: made.length, start: start, end: end, brand: { primary: primary, accent: accent, font: font } };

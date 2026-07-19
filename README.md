@@ -128,6 +128,7 @@ ChatGPT uses a remotely reachable HTTPS MCP endpoint rather than launching this 
 | `ae_create_motion_template` | Brand-aware reusable AE motion graphic |
 | `ae_create_motion_blueprint` | Create the canonical motion-video plan |
 | `ae_validate_motion_blueprint` | Explain timing, brand, scene, and template problems |
+| `ae_audit_motion_coverage` | Verify beat choreography, object motion, scene variation, and settle moments |
 | `ae_repair_motion_blueprint` | Apply safe deterministic blueprint repairs |
 | `ae_build_motion_video` | Build, QA, preview-render, and review a complete motion video |
 | `ae_render_composition` | Automatic AE render/export preset |

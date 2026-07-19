@@ -5,6 +5,13 @@ export type MotionAspectRatio = "16:9" | "9:16" | "1:1";
 export type MotionScenePurpose = "hook" | "setup" | "explanation" | "payoff" | "cta";
 export type MotionIntensity = "low" | "medium" | "high";
 export type MotionTransition = "cut" | "fade" | "slide" | "scale";
+export type MotionVisualStyle = "japanese-pop" | "kinetic-editorial" | "minimal";
+
+export interface MotionBeat {
+  offset: number;
+  kind: "impact" | "entrance" | "accent" | "settle" | "transition";
+  intensity: number;
+}
 
 export interface VisualGrammar {
   easing: "easeOut" | "easeInOut" | "linear";
@@ -28,12 +35,15 @@ export interface MotionSceneBlueprint {
   templateId: string;
   transition: MotionTransition;
   motionIntensity: MotionIntensity;
+  beats: MotionBeat[];
 }
 
 export interface MotionVideoBlueprint {
   version: 1;
   id: string;
   brief: string;
+  visualStyle: MotionVisualStyle;
+  energy: number;
   compName: string;
   aspectRatio: MotionAspectRatio;
   width: number;
@@ -65,6 +75,7 @@ export interface MotionSceneInput {
   end?: number;
   motionIntensity?: MotionIntensity;
   transition?: MotionTransition;
+  beats?: MotionBeat[];
 }
 
 export interface CreateMotionBlueprintOptions {
@@ -74,6 +85,8 @@ export interface CreateMotionBlueprintOptions {
   frameRate: number;
   aspectRatio: MotionAspectRatio;
   brand: BrandConfig;
+  visualStyle?: MotionVisualStyle;
+  energy?: number;
   scenes?: MotionSceneInput[];
   renderFormat?: "mp4" | "mov" | "png";
   renderPreset?: string;
@@ -101,6 +114,33 @@ function cleanText(value: string, fallback: string): string {
 function shortTitle(brief: string): string {
   const words = cleanText(brief, "Make the idea impossible to miss").split(" ");
   return words.slice(0, 9).join(" ").replace(/[.,!?;:]+$/, "");
+}
+
+function defaultBeats(start: number, end: number, energy: number): MotionBeat[] {
+  const span = Math.max(0.75, end - start);
+  return [
+    { offset: 0.02, kind: "impact", intensity: Math.min(1, energy + 0.08) },
+    { offset: Number(Math.min(span - 0.08, span * 0.24).toFixed(3)), kind: "entrance", intensity: energy },
+    { offset: Number(Math.min(span - 0.06, span * 0.58).toFixed(3)), kind: "accent", intensity: Math.max(0.5, energy - 0.08) },
+    { offset: Number(Math.min(span - 0.03, span * 0.86).toFixed(3)), kind: "settle", intensity: Math.max(0.4, energy - 0.18) },
+  ];
+}
+
+function normalizeBeats(beats: MotionBeat[] | undefined, start: number, end: number, energy: number): MotionBeat[] {
+  const span = Math.max(0.75, end - start);
+  const defaults = defaultBeats(start, end, energy);
+  const source = beats?.length ? beats : defaults;
+  const cleaned = source.map((beat) => ({
+    offset: Number(Math.max(0.02, Math.min(span - 0.03, beat.offset)).toFixed(3)),
+    kind: beat.kind,
+    intensity: Number(Math.max(0, Math.min(1, beat.intensity)).toFixed(3)),
+  }));
+  for (const required of ["impact", "entrance", "accent", "settle"] as const) {
+    if (!cleaned.some((beat) => beat.kind === required)) {
+      cleaned.push(defaults.find((beat) => beat.kind === required)!);
+    }
+  }
+  return cleaned.sort((a, b) => a.offset - b.offset);
 }
 
 function defaultScenes(brief: string, duration: number): MotionSceneInput[] {
@@ -134,6 +174,7 @@ function defaultScenes(brief: string, duration: number): MotionSceneInput[] {
 export function createMotionBlueprint(options: CreateMotionBlueprintOptions): MotionVideoBlueprint {
   const dimensions = DIMENSIONS[options.aspectRatio];
   const inputScenes = options.scenes?.length ? options.scenes : defaultScenes(options.brief, options.duration);
+  const energy = Math.max(0, Math.min(1, options.energy ?? 0.86));
   const scenes = inputScenes.map((scene, index) => ({
     id: `S${String(index + 1).padStart(2, "0")}_${scene.purpose.toUpperCase()}`,
     purpose: scene.purpose,
@@ -145,6 +186,7 @@ export function createMotionBlueprint(options: CreateMotionBlueprintOptions): Mo
     templateId: scene.templateId || DEFAULT_SCENES.find((item) => item.purpose === scene.purpose)?.templateId || "quote-card",
     transition: scene.transition || "fade",
     motionIntensity: scene.motionIntensity || "medium",
+    beats: normalizeBeats(scene.beats, scene.start ?? 0, scene.end ?? options.duration, energy),
   }));
   const grammar: VisualGrammar = {
     easing: "easeOut",
@@ -160,6 +202,8 @@ export function createMotionBlueprint(options: CreateMotionBlueprintOptions): Mo
     version: 1,
     id: `motion_${Date.now().toString(36)}`,
     brief: cleanText(options.brief, "Coherent motion graphics video"),
+    visualStyle: options.visualStyle || "japanese-pop",
+    energy,
     compName: cleanText(options.compName, "Motion Graphics Video"),
     aspectRatio: options.aspectRatio,
     width: dimensions.width,
@@ -177,6 +221,8 @@ export function createMotionBlueprint(options: CreateMotionBlueprintOptions): Mo
 
 export function repairMotionBlueprint(input: MotionVideoBlueprint): MotionVideoBlueprint {
   const blueprint = structuredClone(input);
+  blueprint.visualStyle = blueprint.visualStyle || "japanese-pop";
+  blueprint.energy = Math.max(0, Math.min(1, Number(blueprint.energy ?? 0.86)));
   const available = new Set(MOTION_TEMPLATES.map((template) => template.id));
   let cursor = 0;
   blueprint.scenes = blueprint.scenes.map((scene, index) => {
@@ -193,6 +239,7 @@ export function repairMotionBlueprint(input: MotionVideoBlueprint): MotionVideoB
       templateId: available.has(scene.templateId) ? scene.templateId : "quote-card",
       title: scene.title.slice(0, 72),
       subtitle: scene.subtitle?.slice(0, 96),
+      beats: normalizeBeats(scene.beats, cursor, Math.max(cursor + 0.75, end), blueprint.energy),
     };
     cursor = repaired.end;
     return repaired;

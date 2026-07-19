@@ -41,6 +41,7 @@ import {
 } from "../../workflow/motionBlueprint.js";
 import { auditMotionBlueprint } from "../../workflow/coherenceAudit.js";
 import { repairMotionVideoBlueprint } from "../../workflow/repairPass.js";
+import { auditMotionCoverage } from "../../workflow/mographAudit.js";
 
 function textResult(data: unknown) {
   return {
@@ -866,6 +867,11 @@ export function registerTools(server: McpServer): void {
     end: z.number().positive().optional(),
     motionIntensity: z.enum(["low", "medium", "high"]).optional(),
     transition: z.enum(["cut", "fade", "slide", "scale"]).optional(),
+    beats: z.array(z.object({
+      offset: z.number().nonnegative(),
+      kind: z.enum(["impact", "entrance", "accent", "settle", "transition"]),
+      intensity: z.number().min(0).max(1),
+    })).optional(),
   });
 
   server.tool(
@@ -880,6 +886,8 @@ export function registerTools(server: McpServer): void {
       scenes: z.array(MotionSceneInputSchema).optional(),
       render_format: z.enum(["mp4", "mov", "png"]).optional().default("mp4"),
       render_preset: z.string().optional(),
+      visual_style: z.enum(["japanese-pop", "kinetic-editorial", "minimal"]).optional().default("japanese-pop"),
+      energy: z.number().min(0).max(1).optional().default(0.86),
     },
     async (args) => {
       try {
@@ -891,6 +899,8 @@ export function registerTools(server: McpServer): void {
           frameRate: args.frame_rate,
           aspectRatio: args.aspect_ratio || prefs.brand.aspectRatio,
           brand: prefs.brand,
+          visualStyle: args.visual_style,
+          energy: args.energy,
           scenes: args.scenes as MotionSceneInput[] | undefined,
           renderFormat: args.render_format,
           renderPreset: args.render_preset,
@@ -901,7 +911,7 @@ export function registerTools(server: McpServer): void {
         fs.mkdirSync(dir, { recursive: true });
         const blueprintPath = path.join(dir, `${repaired.blueprint.id}.json`);
         fs.writeFileSync(blueprintPath, JSON.stringify(repaired.blueprint, null, 2), "utf8");
-        return textResult({ status: repaired.after.ok ? "ready" : "needs_revision", blueprint: repaired.blueprint, blueprint_path: blueprintPath, audit: repaired.after, repairs: repaired.repairs });
+        return textResult({ status: repaired.after.ok ? "ready" : "needs_revision", blueprint: repaired.blueprint, blueprint_path: blueprintPath, audit: repaired.after, motion_audit: auditMotionCoverage(repaired.blueprint), repairs: repaired.repairs });
       } catch (err) { return errorResult(err); }
     },
   );
@@ -912,6 +922,15 @@ export function registerTools(server: McpServer): void {
     { blueprint: z.record(z.string(), z.unknown()) },
     async (args) => {
       try { return textResult(auditMotionBlueprint(args.blueprint as unknown as MotionVideoBlueprint)); } catch (err) { return errorResult(err); }
+    },
+  );
+
+  server.tool(
+    "ae_audit_motion_coverage",
+    "Check whether a motion blueprint requests real object choreography, impact beats, scene variation, and readable settle moments instead of a fade-led card sequence.",
+    { blueprint: z.record(z.string(), z.unknown()) },
+    async (args) => {
+      try { return textResult(auditMotionCoverage(args.blueprint as unknown as MotionVideoBlueprint)); } catch (err) { return errorResult(err); }
     },
   );
 
@@ -940,6 +959,8 @@ export function registerTools(server: McpServer): void {
       review_id: z.string().optional(),
       output_path: z.string().optional(),
       render: z.boolean().optional().default(true).describe("Render a preview/final file after building. Set false to leave only the editable AE composition."),
+      visual_style: z.enum(["japanese-pop", "kinetic-editorial", "minimal"]).optional().default("japanese-pop"),
+      energy: z.number().min(0).max(1).optional().default(0.86),
     },
     async (args) => {
       try {
@@ -960,11 +981,14 @@ export function registerTools(server: McpServer): void {
             aspectRatio: args.aspect_ratio || prefs.brand.aspectRatio,
             brand: prefs.brand,
             scenes: args.scenes as MotionSceneInput[] | undefined,
+            visualStyle: args.visual_style,
+            energy: args.energy,
           });
         }
         const repaired = repairMotionVideoBlueprint(blueprint);
         const finalBlueprint = repaired.blueprint;
-        if (!repaired.after.ok) return textResult({ status: "blueprint_invalid", blueprint: finalBlueprint, audit: repaired.after, repairs: repaired.repairs });
+        const motionAudit = auditMotionCoverage(finalBlueprint);
+        if (!repaired.after.ok || !motionAudit.ok) return textResult({ status: "blueprint_invalid", blueprint: finalBlueprint, audit: repaired.after, motion_audit: motionAudit, repairs: repaired.repairs });
         const prefs = getWorkflowPreferences();
         const approvedReview = args.review_id ? listReviews().some((review) => review.id === args.review_id && review.decision === "approved") : false;
         if (prefs.workflowMode === "approval" && !args.approved && !approvedReview) {
@@ -985,7 +1009,8 @@ export function registerTools(server: McpServer): void {
             comp_name: finalBlueprint.compName,
             scene_id: scene.id,
             scene_purpose: scene.purpose,
-            visual_style: "japanese-pop",
+            visual_style: finalBlueprint.visualStyle,
+            energy: finalBlueprint.energy,
             template_id: scene.templateId,
             text: scene.title,
             title: scene.title,
@@ -1015,7 +1040,7 @@ export function registerTools(server: McpServer): void {
         const renderResult = args.render ? await call(HostMethods.COMP_RENDER, { comp_name: finalBlueprint.compName, output_path: previewPath, format: finalBlueprint.render.format, output_preset: finalBlueprint.render.preset || (finalBlueprint.render.format === "png" ? "PNG Sequence with Alpha" : finalBlueprint.render.format === "mov" ? "Lossless with Alpha" : "H.264 - Match Render Settings - 15 Mbps") }, `MCP: Render ${finalBlueprint.compName}`) : null;
         const review = createReview({ comp: finalBlueprint.compName, frames: frameData.frames, render: renderResult ? renderResult.data as { path: string; format: string; bytes?: number } : undefined });
         if (prefs.workflowMode === "autonomous") decideReview(review.id, "approved", "Automatically approved by autonomous motion-graphics workflow after structural QA.");
-        return textResult({ status: prefs.workflowMode === "autonomous" ? "built_and_approved" : args.render ? "preview_ready" : "built_no_render", workflow_mode: prefs.workflowMode, blueprint: finalBlueprint, audit: repaired.after, repairs: repaired.repairs, ae: created.data, layers, qa, render: renderResult?.data || null, review });
+        return textResult({ status: prefs.workflowMode === "autonomous" ? "built_and_approved" : args.render ? "preview_ready" : "built_no_render", workflow_mode: prefs.workflowMode, blueprint: finalBlueprint, audit: repaired.after, motion_audit: motionAudit, repairs: repaired.repairs, ae: created.data, layers, qa, render: renderResult?.data || null, review });
       } catch (err) { return errorResult(err); }
     },
   );
