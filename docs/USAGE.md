@@ -26,6 +26,15 @@ Run `ae_audit_editorial_plan` before `ae_build_youtube_edit`. The audit reports 
 
 Use `ae_create_motion_template` to create reusable, brand-aware graphics such as hooks, lower thirds, chapter cards, statistics, quotes, subscribe prompts, and end screens. A project brand system keeps colors, type, spacing, logo, and voice consistent across templates.
 
+For a complete coherent motion video, use the blueprint workflow:
+
+1. Call `ae_create_motion_blueprint` with the brief, duration, aspect ratio, and optional scene list.
+2. Call `ae_validate_motion_blueprint` to inspect the explainable checks.
+3. Call `ae_repair_motion_blueprint` for safe timing, template, and text-density repairs.
+4. Call `ae_build_motion_video` with the blueprint or blueprint path.
+
+`ae_build_motion_video` creates a named scene structure (`S01_HOOK`, `S02_SETUP`, `S03_EXPLANATION`, `S04_PAYOFF`, `S05_CTA`), applies one visual grammar across every template, adds scene markers, captures frame QA, renders a preview, and creates a review item. In approval mode it pauses before final delivery; in autonomous mode it completes and approves the workflow after structural QA.
+
 For 3D work, use `ae_prepare_blender_3d_job`, create or animate the scene in Blender, then call `ae_verify_blender_job` before `ae_import_3d_from_blender`. Verification checks frame coverage, frame variation, and exported geometry before import.
 
 ## Review and rendering

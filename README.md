@@ -25,6 +25,7 @@ Build motion graphics, review cuts, and render YouTube-ready projects from an MC
 - **Editorial planning** — sentence-aware cut scoring, explainable EDLs, clean/retention/story modes, YouTube structure, chapters, and b-roll/graphic suggestions
 - **Quality workflow** — multi-frame QA, saved preview reviews, approve/reject decisions, and autonomous or approval-gated builds
 - **Motion system** — reusable brand-aware hook, lower-third, chapter, statistic, quote, subscribe, and end-screen templates
+- **One-shot motion videos** — canonical blueprints, visual grammar, coherence validation, deterministic scene builds, multi-frame QA, repair passes, and approval-aware previews
 - **Export presets** — automatic MP4, MOV, and PNG render presets with explicit output paths
 
 ## Requirements
@@ -125,6 +126,10 @@ ChatGPT uses a remotely reachable HTTPS MCP endpoint rather than launching this 
 | `ae_audit_editorial_plan` | Pacing, hook, coverage, and cut-quality audit |
 | `ae_build_youtube_edit` | Approval-aware YouTube edit builder |
 | `ae_create_motion_template` | Brand-aware reusable AE motion graphic |
+| `ae_create_motion_blueprint` | Create the canonical motion-video plan |
+| `ae_validate_motion_blueprint` | Explain timing, brand, scene, and template problems |
+| `ae_repair_motion_blueprint` | Apply safe deterministic blueprint repairs |
+| `ae_build_motion_video` | Build, QA, preview-render, and review a complete motion video |
 | `ae_render_composition` | Automatic AE render/export preset |
 | `ae_create_review` / `ae_decide_review` | Preview approval workflow |
 | `ae_run_jsx` | Escape hatch |

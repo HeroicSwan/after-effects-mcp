@@ -2,6 +2,7 @@
 
 ## 0.1.0 — Public release
 
+- Added one-shot motion-graphics blueprints with shared visual grammar, coherence validation, deterministic scene naming, scene markers, repair passes, multi-frame QA, preview renders, and approval-aware build orchestration.
 - Added the After Effects bridge, MCP server, resources, prompts, and JSX escape hatch.
 - Added sentence-aware transcript editing with explainable EDLs and clean, retention, and story modes.
 - Added multi-frame QA, review previews, approve/reject decisions, and autonomous or approval-aware builds.

@@ -210,6 +210,24 @@
     } catch (e) {}
   }
 
+  function applyMotionEntrance(layer, start, transition, duration, comp) {
+    try {
+      var d = Number(duration || 0.25);
+      var transform = layer.property("ADBE Transform Group");
+      if (transition === "slide") {
+        var position = transform.property("ADBE Position");
+        var target = position.value;
+        position.setValueAtTime(start, [target[0] - comp.width * 0.08, target[1]]);
+        position.setValueAtTime(Math.min(layer.outPoint, start + d), target);
+      } else if (transition === "scale") {
+        var scale = transform.property("ADBE Scale");
+        var scaleTarget = scale.value;
+        scale.setValueAtTime(start, [scaleTarget[0] * 0.82, scaleTarget[1] * 0.82]);
+        scale.setValueAtTime(Math.min(layer.outPoint, start + d), scaleTarget);
+      }
+    } catch (e) {}
+  }
+
   function createMotionTemplate(args) {
     var comp = resolveComp(args);
     var id = String(args.template_id || "lower-third");
@@ -219,36 +237,41 @@
     var accent = colorToRgb(args.accent_color || [0.2, 0.65, 1]);
     var white = colorToRgb(args.text_color || [1, 1, 1]);
     var font = args.font_family || "Arial Bold";
+    var prefix = args.scene_id ? String(args.scene_id) + " | " : "";
     var start = Number(args.start || 0);
     var end = Number(args.end || comp.duration);
     var made = [];
     if (id === "lower-third") {
-      made.push(makeTemplateSolid(comp, "MOGRAPH: Lower Third Bar", accent, comp.width * 0.62, comp.height * 0.12, comp.width * 0.36, comp.height * 0.78, start, end));
-      made.push(makeTemplateText(comp, text, "MOGRAPH: Lower Third Title", comp.width * 0.38, comp.height * 0.75, Number(args.font_size || 54), white, start, end, font));
-      if (subtitle) made.push(makeTemplateText(comp, subtitle, "MOGRAPH: Lower Third Subtitle", comp.width * 0.38, comp.height * 0.82, Number(args.subtitle_size || 28), white, start, end, font));
+      made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: Lower Third Bar", accent, comp.width * 0.62, comp.height * 0.12, comp.width * 0.36, comp.height * 0.78, start, end));
+      made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: Lower Third Title", comp.width * 0.38, comp.height * 0.75, Number(args.font_size || 54), white, start, end, font));
+      if (subtitle) made.push(makeTemplateText(comp, subtitle, prefix + "MOGRAPH: Lower Third Subtitle", comp.width * 0.38, comp.height * 0.82, Number(args.subtitle_size || 28), white, start, end, font));
     } else if (id === "chapter-card") {
-      made.push(makeTemplateSolid(comp, "MOGRAPH: Chapter Accent", accent, comp.width, comp.height, comp.width / 2, comp.height / 2, start, end));
-      made.push(makeTemplateText(comp, text, "MOGRAPH: Chapter Title", comp.width / 2, comp.height / 2, Number(args.font_size || 92), white, start, end, font));
+      made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: Chapter Accent", accent, comp.width, comp.height, comp.width / 2, comp.height / 2, start, end));
+      made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: Chapter Title", comp.width / 2, comp.height / 2, Number(args.font_size || 92), white, start, end, font));
     } else if (id === "stat-callout") {
-      made.push(makeTemplateText(comp, text, "MOGRAPH: Statistic", comp.width / 2, comp.height * 0.46, Number(args.font_size || 160), accent, start, end, font));
-      if (subtitle) made.push(makeTemplateText(comp, subtitle, "MOGRAPH: Statistic Label", comp.width / 2, comp.height * 0.62, Number(args.subtitle_size || 42), white, start, end, font));
+      made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: Statistic", comp.width / 2, comp.height * 0.46, Number(args.font_size || 160), accent, start, end, font));
+      if (subtitle) made.push(makeTemplateText(comp, subtitle, prefix + "MOGRAPH: Statistic Label", comp.width / 2, comp.height * 0.62, Number(args.subtitle_size || 42), white, start, end, font));
     } else if (id === "quote-card") {
-      made.push(makeTemplateSolid(comp, "MOGRAPH: Quote Background", primary, comp.width * 0.84, comp.height * 0.48, comp.width / 2, comp.height / 2, start, end));
-      made.push(makeTemplateText(comp, text, "MOGRAPH: Quote", comp.width / 2, comp.height / 2, Number(args.font_size || 58), white, start, end, font));
+      made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: Quote Background", primary, comp.width * 0.84, comp.height * 0.48, comp.width / 2, comp.height / 2, start, end));
+      made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: Quote", comp.width / 2, comp.height / 2, Number(args.font_size || 58), white, start, end, font));
     } else if (id === "subscribe") {
-      made.push(makeTemplateSolid(comp, "MOGRAPH: Subscribe Accent", accent, comp.width * 0.38, comp.height * 0.1, comp.width * 0.78, comp.height * 0.86, start, end));
-      made.push(makeTemplateText(comp, text || "Subscribe", "MOGRAPH: Subscribe Text", comp.width * 0.78, comp.height * 0.86, Number(args.font_size || 42), white, start, end, font));
+      made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: Subscribe Accent", accent, comp.width * 0.38, comp.height * 0.1, comp.width * 0.78, comp.height * 0.86, start, end));
+      made.push(makeTemplateText(comp, text || "Subscribe", prefix + "MOGRAPH: Subscribe Text", comp.width * 0.78, comp.height * 0.86, Number(args.font_size || 42), white, start, end, font));
     } else if (id === "youtube-hook") {
-      made.push(makeTemplateSolid(comp, "MOGRAPH: Hook Accent", accent, comp.width, comp.height, comp.width / 2, comp.height / 2, start, end));
-      made.push(makeTemplateText(comp, text, "MOGRAPH: Hook Text", comp.width / 2, comp.height / 2, Number(args.font_size || 104), white, start, end, font));
+      made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: Hook Accent", accent, comp.width, comp.height, comp.width / 2, comp.height / 2, start, end));
+      made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: Hook Text", comp.width / 2, comp.height / 2, Number(args.font_size || 104), white, start, end, font));
     } else if (id === "end-screen") {
-      made.push(makeTemplateSolid(comp, "MOGRAPH: End Screen Background", primary, comp.width, comp.height, comp.width / 2, comp.height / 2, start, end));
-      made.push(makeTemplateText(comp, text || "Watch Next", "MOGRAPH: End Screen Title", comp.width / 2, comp.height * 0.3, Number(args.font_size || 80), white, start, end, font));
-      made.push(makeTemplateText(comp, subtitle || "Subscribe for more", "MOGRAPH: End Screen CTA", comp.width / 2, comp.height * 0.72, Number(args.subtitle_size || 42), accent, start, end, font));
+      made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: End Screen Background", primary, comp.width, comp.height, comp.width / 2, comp.height / 2, start, end));
+      made.push(makeTemplateText(comp, text || "Watch Next", prefix + "MOGRAPH: End Screen Title", comp.width / 2, comp.height * 0.3, Number(args.font_size || 80), white, start, end, font));
+      made.push(makeTemplateText(comp, subtitle || "Subscribe for more", prefix + "MOGRAPH: End Screen CTA", comp.width / 2, comp.height * 0.72, Number(args.subtitle_size || 42), accent, start, end, font));
     } else {
-      made.push(makeTemplateText(comp, text, "MOGRAPH: " + id, comp.width / 2, comp.height / 2, Number(args.font_size || 84), white, start, end, font));
+      made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: " + id, comp.width / 2, comp.height / 2, Number(args.font_size || 84), white, start, end, font));
     }
-    for (var mi = 0; mi < made.length; mi++) fadeLayer(made[mi], start, end, Number(args.fade_duration || 0.25));
+    for (var mi = 0; mi < made.length; mi++) {
+      fadeLayer(made[mi], start, end, Number(args.fade_duration || 0.25));
+      applyMotionEntrance(made[mi], start, String(args.transition || "fade"), Number(args.fade_duration || 0.25), comp);
+    }
+    try { if (comp.markerProperty) comp.markerProperty.setValueAtTime(start, new MarkerValue(id + " | " + (args.scene_id || "scene"))); } catch (e2) {}
     return { template_id: id, comp: comp.name, layers: made.length, start: start, end: end, brand: { primary: primary, accent: accent, font: font } };
   }
 

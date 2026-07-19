@@ -1,0 +1,202 @@
+import { MOTION_TEMPLATES } from "../motion/templates.js";
+import type { BrandConfig } from "./preferences.js";
+
+export type MotionAspectRatio = "16:9" | "9:16" | "1:1";
+export type MotionScenePurpose = "hook" | "setup" | "explanation" | "payoff" | "cta";
+export type MotionIntensity = "low" | "medium" | "high";
+export type MotionTransition = "cut" | "fade" | "slide" | "scale";
+
+export interface VisualGrammar {
+  easing: "easeOut" | "easeInOut" | "linear";
+  transition: MotionTransition;
+  motionIntensity: MotionIntensity;
+  maxTextLines: number;
+  maxWordsPerGraphic: number;
+  titleScale: number;
+  bodyScale: number;
+  cornerRadius: number;
+}
+
+export interface MotionSceneBlueprint {
+  id: string;
+  purpose: MotionScenePurpose;
+  start: number;
+  end: number;
+  title: string;
+  subtitle?: string;
+  visualGoal: string;
+  templateId: string;
+  transition: MotionTransition;
+  motionIntensity: MotionIntensity;
+}
+
+export interface MotionVideoBlueprint {
+  version: 1;
+  id: string;
+  brief: string;
+  compName: string;
+  aspectRatio: MotionAspectRatio;
+  width: number;
+  height: number;
+  duration: number;
+  frameRate: number;
+  brand: BrandConfig;
+  visualGrammar: VisualGrammar;
+  scenes: MotionSceneBlueprint[];
+  qa: {
+    requiredFrameCount: number;
+    minimumScore: number;
+    requireHookAndCta: boolean;
+  };
+  render: {
+    format: "mp4" | "mov" | "png";
+    preset?: string;
+  };
+  createdAt: string;
+}
+
+export interface MotionSceneInput {
+  purpose: MotionScenePurpose;
+  title: string;
+  subtitle?: string;
+  visualGoal?: string;
+  templateId?: string;
+  start?: number;
+  end?: number;
+  motionIntensity?: MotionIntensity;
+  transition?: MotionTransition;
+}
+
+export interface CreateMotionBlueprintOptions {
+  brief: string;
+  compName: string;
+  duration: number;
+  frameRate: number;
+  aspectRatio: MotionAspectRatio;
+  brand: BrandConfig;
+  scenes?: MotionSceneInput[];
+  renderFormat?: "mp4" | "mov" | "png";
+  renderPreset?: string;
+}
+
+const DIMENSIONS: Record<MotionAspectRatio, { width: number; height: number }> = {
+  "16:9": { width: 1920, height: 1080 },
+  "9:16": { width: 1080, height: 1920 },
+  "1:1": { width: 1080, height: 1080 },
+};
+
+const DEFAULT_SCENES: Array<{ purpose: MotionScenePurpose; templateId: string; share: number; visualGoal: string }> = [
+  { purpose: "hook", templateId: "youtube-hook", share: 0.16, visualGoal: "Make the central idea immediately legible" },
+  { purpose: "setup", templateId: "chapter-card", share: 0.18, visualGoal: "Establish context and the viewer promise" },
+  { purpose: "explanation", templateId: "stat-callout", share: 0.30, visualGoal: "Give the main idea one strong visual anchor" },
+  { purpose: "payoff", templateId: "quote-card", share: 0.22, visualGoal: "Deliver the memorable takeaway" },
+  { purpose: "cta", templateId: "end-screen", share: 0.14, visualGoal: "Close with a clear next action" },
+];
+
+function cleanText(value: string, fallback: string): string {
+  const text = value.replace(/\s+/g, " ").trim();
+  return text || fallback;
+}
+
+function shortTitle(brief: string): string {
+  const words = cleanText(brief, "Make the idea impossible to miss").split(" ");
+  return words.slice(0, 9).join(" ").replace(/[.,!?;:]+$/, "");
+}
+
+function defaultScenes(brief: string, duration: number): MotionSceneInput[] {
+  const hook = shortTitle(brief);
+  const labels: Record<MotionScenePurpose, string> = {
+    hook,
+    setup: "Why this matters",
+    explanation: "The core idea",
+    payoff: "Make it memorable",
+    cta: "Build the next frame",
+  };
+  let cursor = 0;
+  return DEFAULT_SCENES.map((scene, index) => {
+    const start = cursor;
+    const end = index === DEFAULT_SCENES.length - 1 ? duration : Number((cursor + duration * scene.share).toFixed(3));
+    cursor = end;
+    return {
+      purpose: scene.purpose,
+      title: labels[scene.purpose],
+      subtitle: scene.purpose === "hook" ? "A coherent motion system from one brief" : undefined,
+      visualGoal: scene.visualGoal,
+      templateId: scene.templateId,
+      start,
+      end,
+      motionIntensity: scene.purpose === "hook" ? "high" : scene.purpose === "cta" ? "low" : "medium",
+      transition: scene.purpose === "hook" ? "cut" : "fade",
+    };
+  });
+}
+
+export function createMotionBlueprint(options: CreateMotionBlueprintOptions): MotionVideoBlueprint {
+  const dimensions = DIMENSIONS[options.aspectRatio];
+  const inputScenes = options.scenes?.length ? options.scenes : defaultScenes(options.brief, options.duration);
+  const scenes = inputScenes.map((scene, index) => ({
+    id: `S${String(index + 1).padStart(2, "0")}_${scene.purpose.toUpperCase()}`,
+    purpose: scene.purpose,
+    start: scene.start ?? 0,
+    end: scene.end ?? options.duration,
+    title: cleanText(scene.title, scene.purpose.toUpperCase()),
+    subtitle: scene.subtitle ? cleanText(scene.subtitle, "") : undefined,
+    visualGoal: cleanText(scene.visualGoal || "Advance the story visually", "Advance the story visually"),
+    templateId: scene.templateId || DEFAULT_SCENES.find((item) => item.purpose === scene.purpose)?.templateId || "quote-card",
+    transition: scene.transition || "fade",
+    motionIntensity: scene.motionIntensity || "medium",
+  }));
+  const grammar: VisualGrammar = {
+    easing: "easeOut",
+    transition: "fade",
+    motionIntensity: "medium",
+    maxTextLines: 2,
+    maxWordsPerGraphic: 9,
+    titleScale: 1,
+    bodyScale: 0.5,
+    cornerRadius: 24,
+  };
+  return {
+    version: 1,
+    id: `motion_${Date.now().toString(36)}`,
+    brief: cleanText(options.brief, "Coherent motion graphics video"),
+    compName: cleanText(options.compName, "Motion Graphics Video"),
+    aspectRatio: options.aspectRatio,
+    width: dimensions.width,
+    height: dimensions.height,
+    duration: options.duration,
+    frameRate: options.frameRate,
+    brand: options.brand,
+    visualGrammar: grammar,
+    scenes,
+    qa: { requiredFrameCount: Math.max(5, scenes.length * 2), minimumScore: 0.8, requireHookAndCta: true },
+    render: { format: options.renderFormat || "mp4", preset: options.renderPreset },
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export function repairMotionBlueprint(input: MotionVideoBlueprint): MotionVideoBlueprint {
+  const blueprint = structuredClone(input);
+  const available = new Set(MOTION_TEMPLATES.map((template) => template.id));
+  let cursor = 0;
+  blueprint.scenes = blueprint.scenes.map((scene, index) => {
+    const remaining = blueprint.scenes.length - index;
+    const requested = Math.max(0.75, scene.end - scene.start);
+    const end = index === blueprint.scenes.length - 1
+      ? blueprint.duration
+      : Math.min(blueprint.duration - (remaining - 1) * 0.75, cursor + requested);
+    const repaired = {
+      ...scene,
+      id: `S${String(index + 1).padStart(2, "0")}_${scene.purpose.toUpperCase()}`,
+      start: Number(cursor.toFixed(3)),
+      end: Number(Math.max(cursor + 0.75, end).toFixed(3)),
+      templateId: available.has(scene.templateId) ? scene.templateId : "quote-card",
+      title: scene.title.slice(0, 72),
+      subtitle: scene.subtitle?.slice(0, 96),
+    };
+    cursor = repaired.end;
+    return repaired;
+  });
+  if (blueprint.scenes.length) blueprint.scenes[blueprint.scenes.length - 1]!.end = blueprint.duration;
+  return blueprint;
+}

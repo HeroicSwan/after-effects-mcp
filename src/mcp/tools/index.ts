@@ -34,6 +34,13 @@ import {
   type EditMode,
   type WorkflowMode,
 } from "../../workflow/preferences.js";
+import {
+  createMotionBlueprint,
+  type MotionSceneInput,
+  type MotionVideoBlueprint,
+} from "../../workflow/motionBlueprint.js";
+import { auditMotionBlueprint } from "../../workflow/coherenceAudit.js";
+import { repairMotionVideoBlueprint } from "../../workflow/repairPass.js";
 
 function textResult(data: unknown) {
   return {
@@ -847,6 +854,166 @@ export function registerTools(server: McpServer): void {
       aspect_ratio: z.enum(["16:9", "9:16", "1:1"]).optional(),
     },
     async (args) => textResult(MOTION_TEMPLATES.filter((t) => !args.aspect_ratio || t.supports.includes(args.aspect_ratio))),
+  );
+
+  const MotionSceneInputSchema = z.object({
+    purpose: z.enum(["hook", "setup", "explanation", "payoff", "cta"]),
+    title: z.string(),
+    subtitle: z.string().optional(),
+    visualGoal: z.string().optional(),
+    templateId: z.string().optional(),
+    start: z.number().nonnegative().optional(),
+    end: z.number().positive().optional(),
+    motionIntensity: z.enum(["low", "medium", "high"]).optional(),
+    transition: z.enum(["cut", "fade", "slide", "scale"]).optional(),
+  });
+
+  server.tool(
+    "ae_create_motion_blueprint",
+    "Create a canonical, explainable motion-graphics video blueprint without mutating After Effects. The blueprint is the shared source of truth for scenes, brand, timing, templates, QA, and rendering.",
+    {
+      brief: z.string().min(1),
+      comp_name: z.string().optional().default("Motion Graphics Video"),
+      duration: z.number().positive().optional().default(30),
+      frame_rate: z.number().positive().optional().default(30),
+      aspect_ratio: z.enum(["16:9", "9:16", "1:1"]).optional(),
+      scenes: z.array(MotionSceneInputSchema).optional(),
+      render_format: z.enum(["mp4", "mov", "png"]).optional().default("mp4"),
+      render_preset: z.string().optional(),
+    },
+    async (args) => {
+      try {
+        const prefs = getWorkflowPreferences();
+        const blueprint = createMotionBlueprint({
+          brief: args.brief,
+          compName: args.comp_name,
+          duration: args.duration,
+          frameRate: args.frame_rate,
+          aspectRatio: args.aspect_ratio || prefs.brand.aspectRatio,
+          brand: prefs.brand,
+          scenes: args.scenes as MotionSceneInput[] | undefined,
+          renderFormat: args.render_format,
+          renderPreset: args.render_preset,
+        });
+        const repaired = repairMotionVideoBlueprint(blueprint);
+        ensureDataDirs();
+        const dir = path.join(getDataRoot(), "motion");
+        fs.mkdirSync(dir, { recursive: true });
+        const blueprintPath = path.join(dir, `${repaired.blueprint.id}.json`);
+        fs.writeFileSync(blueprintPath, JSON.stringify(repaired.blueprint, null, 2), "utf8");
+        return textResult({ status: repaired.after.ok ? "ready" : "needs_revision", blueprint: repaired.blueprint, blueprint_path: blueprintPath, audit: repaired.after, repairs: repaired.repairs });
+      } catch (err) { return errorResult(err); }
+    },
+  );
+
+  server.tool(
+    "ae_validate_motion_blueprint",
+    "Run explainable coherence checks on a motion blueprint without mutating After Effects.",
+    { blueprint: z.record(z.string(), z.unknown()) },
+    async (args) => {
+      try { return textResult(auditMotionBlueprint(args.blueprint as unknown as MotionVideoBlueprint)); } catch (err) { return errorResult(err); }
+    },
+  );
+
+  server.tool(
+    "ae_repair_motion_blueprint",
+    "Apply deterministic safe repairs to scene timing, template ids, and graphic text limits, then return the before/after coherence audit.",
+    { blueprint: z.record(z.string(), z.unknown()) },
+    async (args) => {
+      try { return textResult(repairMotionVideoBlueprint(args.blueprint as unknown as MotionVideoBlueprint)); } catch (err) { return errorResult(err); }
+    },
+  );
+
+  server.tool(
+    "ae_build_motion_video",
+    "One-shot motion-graphics workflow: validate and repair a blueprint, build deterministic named scenes in After Effects, capture QA frames, render a preview or final output, and create an approval review.",
+    {
+      blueprint: z.record(z.string(), z.unknown()).optional(),
+      blueprint_path: z.string().optional(),
+      brief: z.string().optional(),
+      comp_name: z.string().optional().default("Motion Graphics Video"),
+      duration: z.number().positive().optional().default(30),
+      frame_rate: z.number().positive().optional().default(30),
+      aspect_ratio: z.enum(["16:9", "9:16", "1:1"]).optional(),
+      scenes: z.array(MotionSceneInputSchema).optional(),
+      approved: z.boolean().optional().default(false),
+      review_id: z.string().optional(),
+      output_path: z.string().optional(),
+    },
+    async (args) => {
+      try {
+        let blueprint: MotionVideoBlueprint;
+        if (args.blueprint_path) {
+          if (!fs.existsSync(args.blueprint_path)) return errorResult(new BridgeError(`Blueprint not found: ${args.blueprint_path}`, "FILE_NOT_FOUND"));
+          blueprint = JSON.parse(fs.readFileSync(args.blueprint_path, "utf8")) as MotionVideoBlueprint;
+        } else if (args.blueprint) {
+          blueprint = args.blueprint as unknown as MotionVideoBlueprint;
+        } else {
+          const prefs = getWorkflowPreferences();
+          if (!args.brief) return errorResult(new BridgeError("Pass blueprint, blueprint_path, or brief", "ARGS"));
+          blueprint = createMotionBlueprint({
+            brief: args.brief,
+            compName: args.comp_name,
+            duration: args.duration,
+            frameRate: args.frame_rate,
+            aspectRatio: args.aspect_ratio || prefs.brand.aspectRatio,
+            brand: prefs.brand,
+            scenes: args.scenes as MotionSceneInput[] | undefined,
+          });
+        }
+        const repaired = repairMotionVideoBlueprint(blueprint);
+        const finalBlueprint = repaired.blueprint;
+        if (!repaired.after.ok) return textResult({ status: "blueprint_invalid", blueprint: finalBlueprint, audit: repaired.after, repairs: repaired.repairs });
+        const prefs = getWorkflowPreferences();
+        const approvedReview = args.review_id ? listReviews().some((review) => review.id === args.review_id && review.decision === "approved") : false;
+        if (prefs.workflowMode === "approval" && !args.approved && !approvedReview) {
+          return textResult({ status: "approval_required", workflow_mode: prefs.workflowMode, blueprint: finalBlueprint, audit: repaired.after, repairs: repaired.repairs, next: "Review the blueprint, then call ae_build_motion_video again with approved=true." });
+        }
+        const created = await call(HostMethods.COMP_CREATE, {
+          name: finalBlueprint.compName,
+          width: finalBlueprint.width,
+          height: finalBlueprint.height,
+          duration: finalBlueprint.duration,
+          frameRate: finalBlueprint.frameRate,
+          pixelAspect: 1,
+          bgColor: finalBlueprint.brand.primaryColor,
+        }, `MCP: Build ${finalBlueprint.compName}`);
+        const layers = [];
+        for (const scene of finalBlueprint.scenes) {
+          const result = await call(HostMethods.MOTION_CREATE_TEMPLATE, {
+            comp_name: finalBlueprint.compName,
+            scene_id: scene.id,
+            template_id: scene.templateId,
+            text: scene.title,
+            title: scene.title,
+            subtitle: scene.subtitle,
+            start: scene.start,
+            end: scene.end,
+            primary_color: finalBlueprint.brand.primaryColor,
+            accent_color: finalBlueprint.brand.accentColor,
+            text_color: finalBlueprint.brand.secondaryColor,
+            font_family: finalBlueprint.brand.fontFamily,
+            font_size: Math.round(96 * finalBlueprint.visualGrammar.titleScale),
+            fade_duration: scene.transition === "cut" ? 0.08 : 0.25,
+            transition: scene.transition,
+          }, `MCP: Build ${scene.id}`);
+          layers.push({ scene: scene.id, purpose: scene.purpose, result: result.data });
+        }
+        const times = Array.from(new Set([0, ...finalBlueprint.scenes.map((scene) => Number(((scene.start + scene.end) / 2).toFixed(3))), ...finalBlueprint.scenes.map((scene) => Number(Math.max(0, scene.end - 0.05).toFixed(3)))]))
+          .filter((time) => time >= 0 && time <= finalBlueprint.duration)
+          .slice(0, Math.max(finalBlueprint.qa.requiredFrameCount, 5));
+        const frameResult = await call(HostMethods.VIEW_CAPTURE_FRAMES, { comp_name: finalBlueprint.compName, times });
+        const frameData = frameResult.data as { comp: string; frames: { time: number; path: string; bytes: number }[] };
+        for (const frame of frameData.frames) frame.bytes = await waitForFileReady(frame.path);
+        const frameSizes = frameData.frames.map((frame) => frame.bytes).filter((bytes) => bytes > 0);
+        const qa = { all_frames_written: frameSizes.length === frameData.frames.length, frames_differ: new Set(frameSizes).size > 1, frame_count: frameData.frames.length, note: "Inspect the returned preview frames before final delivery." };
+        const previewPath = args.output_path || path.join(getPreviewsRoot(), `${finalBlueprint.compName.replace(/[^\w\-]+/g, "_")}_${finalBlueprint.id}_preview.${finalBlueprint.render.format}`);
+        const renderResult = await call(HostMethods.COMP_RENDER, { comp_name: finalBlueprint.compName, output_path: previewPath, format: finalBlueprint.render.format, output_preset: finalBlueprint.render.preset || (finalBlueprint.render.format === "png" ? "PNG Sequence with Alpha" : finalBlueprint.render.format === "mov" ? "Lossless with Alpha" : "H.264 - Match Render Settings - 15 Mbps") }, `MCP: Render ${finalBlueprint.compName}`);
+        const review = createReview({ comp: finalBlueprint.compName, frames: frameData.frames, render: renderResult.data as { path: string; format: string; bytes?: number } });
+        if (prefs.workflowMode === "autonomous") decideReview(review.id, "approved", "Automatically approved by autonomous motion-graphics workflow after structural QA.");
+        return textResult({ status: prefs.workflowMode === "autonomous" ? "built_and_approved" : "preview_ready", workflow_mode: prefs.workflowMode, blueprint: finalBlueprint, audit: repaired.after, repairs: repaired.repairs, ae: created.data, layers, qa, render: renderResult.data, review });
+      } catch (err) { return errorResult(err); }
+    },
   );
 
   server.tool(
