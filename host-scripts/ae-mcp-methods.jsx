@@ -238,42 +238,95 @@
     return l;
   }
 
-  function makeJapaneseDecor(comp, prefix, purpose, primary, accent, white, start, end, font) {
+  function sceneLayout(comp, purpose, safeMargin) {
+    var inset = Math.max(Number(safeMargin || 100), Math.round(Math.min(comp.width, comp.height) * 0.07));
+    var left = inset;
+    var right = comp.width - inset;
+    var top = inset;
+    var bottom = comp.height - inset;
+    var centerX = comp.width / 2;
+    var centerY = comp.height / 2;
+    var layout = {
+      left: left,
+      right: right,
+      top: top,
+      bottom: bottom,
+      centerX: centerX,
+      centerY: centerY,
+      headlineX: centerX,
+      headlineY: centerY,
+      supportX: centerX,
+      supportY: centerY + comp.height * 0.16,
+      labelX: left,
+      labelY: top + comp.height * 0.035,
+      accentX: right - comp.width * 0.08,
+      accentY: top + comp.height * 0.12,
+      lowerY: bottom - comp.height * 0.04
+    };
+    if (purpose === "setup") {
+      layout.headlineY = centerY - comp.height * 0.02;
+      layout.lowerY = bottom - comp.height * 0.02;
+    } else if (purpose === "explanation") {
+      layout.headlineY = centerY - comp.height * 0.04;
+      layout.supportY = centerY + comp.height * 0.14;
+    } else if (purpose === "payoff") {
+      layout.headlineX = comp.width * 0.36;
+      layout.headlineY = centerY;
+      layout.accentX = right - comp.width * 0.16;
+      layout.accentY = centerY;
+    } else if (purpose === "cta") {
+      layout.headlineY = top + comp.height * 0.24;
+      layout.supportY = centerY + comp.height * 0.22;
+      layout.lowerY = bottom - comp.height * 0.06;
+    }
+    return layout;
+  }
+
+  function boundedPoint(point, comp, safeMargin) {
+    var inset = Math.max(Number(safeMargin || 100), Math.round(Math.min(comp.width, comp.height) * 0.045));
+    return [
+      Math.max(inset, Math.min(comp.width - inset, Number(point[0]))),
+      Math.max(inset, Math.min(comp.height - inset, Number(point[1])))
+    ];
+  }
+
+  function makeJapaneseDecor(comp, prefix, purpose, primary, accent, white, start, end, font, safeMargin) {
     var made = [];
     var w = comp.width;
     var h = comp.height;
+    var layout = sceneLayout(comp, purpose, safeMargin);
     var dark = primary;
     var pink = accent;
     if (purpose === "hook") {
-      made.push(makeShapeCircle(comp, prefix + "JP Pop Sun", pink, h * 0.24, w * 0.14, h * 0.18, start, end));
-      made.push(makeShapeCircle(comp, prefix + "JP Pop Ring", null, h * 0.34, w * 0.86, h * 0.76, start, end, white, 10));
-      made.push(makeShapeRect(comp, prefix + "JP Speed Line A", white, w * 0.18, 14, w * 0.82, h * 0.18, start, end, 7, -18));
-      made.push(makeShapeRect(comp, prefix + "JP Speed Line B", pink, w * 0.12, 10, w * 0.9, h * 0.25, start, end, 5, -18));
-      made.push(makeTemplateText(comp, "POP / 01", prefix + "JP Label", w * 0.13, h * 0.11, 28, white, start, end, font));
+      made.push(makeShapeCircle(comp, prefix + "JP Pop Sun", pink, h * 0.24, layout.left + w * 0.045, layout.top + h * 0.07, start, end));
+      made.push(makeShapeCircle(comp, prefix + "JP Pop Ring", null, h * 0.34, layout.right - h * 0.17, layout.bottom - h * 0.18, start, end, white, 10));
+      made.push(makeShapeRect(comp, prefix + "JP Speed Line A", white, w * 0.18, 14, layout.right - w * 0.08, layout.top + h * 0.07, start, end, 7, -18));
+      made.push(makeShapeRect(comp, prefix + "JP Speed Line B", pink, w * 0.12, 10, layout.right - w * 0.02, layout.top + h * 0.14, start, end, 5, -18));
+      made.push(makeTemplateText(comp, "POP / 01", prefix + "JP Label", layout.labelX + w * 0.02, layout.labelY, 28, white, start, end, font));
     } else if (purpose === "setup") {
       var i;
-      for (i = 0; i < 7; i++) made.push(makeShapeRect(comp, prefix + "JP Rhythm Bar " + i, i % 2 ? white : pink, 22, h * (0.12 + i * 0.018), w * (0.12 + i * 0.045), h * 0.86, start, end, 11, -8));
-      made.push(makeShapeCircle(comp, prefix + "JP Rhythm Dot", pink, 46, w * 0.88, h * 0.16, start, end));
-      made.push(makeTemplateText(comp, "RHYTHM / 02", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+      for (i = 0; i < 7; i++) made.push(makeShapeRect(comp, prefix + "JP Rhythm Bar " + i, i % 2 ? white : pink, 22, h * (0.12 + i * 0.018), layout.left + w * (0.045 + i * 0.045), layout.lowerY, start, end, 11, -8));
+      made.push(makeShapeCircle(comp, prefix + "JP Rhythm Dot", pink, 46, layout.right - w * 0.035, layout.top + h * 0.08, start, end));
+      made.push(makeTemplateText(comp, "RHYTHM / 02", prefix + "JP Label", layout.labelX + w * 0.02, layout.labelY, 28, white, start, end, font));
     } else if (purpose === "explanation") {
-      made.push(makeShapeRect(comp, prefix + "JP Data Rail", white, w * 0.22, 12, w * 0.17, h * 0.76, start, end, 6, 0));
-      made.push(makeShapeRect(comp, prefix + "JP Data Rail Accent", pink, w * 0.12, 12, w * 0.83, h * 0.76, start, end, 6, 0));
-      made.push(makeShapeCircle(comp, prefix + "JP Data Dot A", pink, 34, w * 0.12, h * 0.25, start, end));
-      made.push(makeShapeCircle(comp, prefix + "JP Data Dot B", white, 22, w * 0.88, h * 0.35, start, end));
-      made.push(makeTemplateText(comp, "CATCH / 03", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+      made.push(makeShapeRect(comp, prefix + "JP Data Rail", white, w * 0.22, 12, layout.left + w * 0.11, layout.lowerY, start, end, 6, 0));
+      made.push(makeShapeRect(comp, prefix + "JP Data Rail Accent", pink, w * 0.12, 12, layout.right - w * 0.11, layout.lowerY, start, end, 6, 0));
+      made.push(makeShapeCircle(comp, prefix + "JP Data Dot A", pink, 34, layout.left + w * 0.02, layout.top + h * 0.09, start, end));
+      made.push(makeShapeCircle(comp, prefix + "JP Data Dot B", white, 22, layout.right - w * 0.02, layout.top + h * 0.18, start, end));
+      made.push(makeTemplateText(comp, "CATCH / 03", prefix + "JP Label", layout.labelX + w * 0.02, layout.labelY, 28, white, start, end, font));
     } else if (purpose === "payoff") {
-      made.push(makeShapeCircle(comp, prefix + "JP Payoff Ring", null, h * 0.48, w * 0.5, h * 0.5, start, end, pink, 12));
-      made.push(makeShapeRect(comp, prefix + "JP Payoff Corner A", white, 90, 18, w * 0.12, h * 0.22, start, end, 9, 35));
-      made.push(makeShapeRect(comp, prefix + "JP Payoff Corner B", pink, 90, 18, w * 0.88, h * 0.78, start, end, 9, 35));
-      made.push(makeShapeCircle(comp, prefix + "JP Payoff Dot A", white, 30, w * 0.18, h * 0.78, start, end));
-      made.push(makeShapeCircle(comp, prefix + "JP Payoff Dot B", pink, 42, w * 0.82, h * 0.22, start, end));
-      made.push(makeTemplateText(comp, "SUKI / 04", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+      made.push(makeShapeCircle(comp, prefix + "JP Payoff Ring", null, h * 0.38, layout.accentX, layout.accentY, start, end, pink, 12));
+      made.push(makeShapeRect(comp, prefix + "JP Payoff Corner A", white, 90, 18, layout.left + w * 0.04, layout.top + h * 0.09, start, end, 9, 35));
+      made.push(makeShapeRect(comp, prefix + "JP Payoff Corner B", pink, 90, 18, layout.right - w * 0.04, layout.bottom - h * 0.09, start, end, 9, 35));
+      made.push(makeShapeCircle(comp, prefix + "JP Payoff Dot A", white, 30, layout.left + w * 0.06, layout.bottom - h * 0.08, start, end));
+      made.push(makeShapeCircle(comp, prefix + "JP Payoff Dot B", pink, 42, layout.right - w * 0.06, layout.top + h * 0.08, start, end));
+      made.push(makeTemplateText(comp, "SUKI / 04", prefix + "JP Label", layout.labelX + w * 0.02, layout.labelY, 28, white, start, end, font));
     } else if (purpose === "cta") {
-      made.push(makeShapeRect(comp, prefix + "JP CTA Button", pink, w * 0.32, 92, w * 0.5, h * 0.84, start, end, 46, 0));
-      made.push(makeShapeCircle(comp, prefix + "JP CTA Orb", white, 150, w * 0.14, h * 0.75, start, end));
-      made.push(makeShapeRect(comp, prefix + "JP CTA Spark A", pink, 90, 14, w * 0.84, h * 0.19, start, end, 7, 45));
-      made.push(makeShapeRect(comp, prefix + "JP CTA Spark B", white, 90, 14, w * 0.84, h * 0.19, start, end, 7, -45));
-      made.push(makeTemplateText(comp, "MATA NE / 05", prefix + "JP Label", w * 0.13, h * 0.14, 28, pink, start, end, font));
+      made.push(makeShapeRect(comp, prefix + "JP CTA Button", pink, w * 0.32, 92, layout.centerX, layout.lowerY, start, end, 46, 0));
+      made.push(makeShapeCircle(comp, prefix + "JP CTA Orb", white, 150, layout.left + w * 0.06, layout.lowerY - h * 0.09, start, end));
+      made.push(makeShapeRect(comp, prefix + "JP CTA Spark A", pink, 90, 14, layout.right - w * 0.08, layout.top + h * 0.11, start, end, 7, 45));
+      made.push(makeShapeRect(comp, prefix + "JP CTA Spark B", white, 90, 14, layout.right - w * 0.08, layout.top + h * 0.11, start, end, 7, -45));
+      made.push(makeTemplateText(comp, "MATA NE / 05", prefix + "JP Label", layout.labelX + w * 0.02, layout.labelY, 28, pink, start, end, font));
     }
     return made;
   }
@@ -325,7 +378,7 @@
     try { layer.motionBlur = true; } catch (e4) {}
   }
 
-  function animateMographLayer(layer, start, end, transition, order, purpose, comp, energy) {
+  function animateMographLayer(layer, start, end, transition, order, purpose, comp, energy, safeMargin) {
     try {
       var name = String(layer.name);
       var span = Math.max(0.75, end - start);
@@ -345,18 +398,25 @@
       enableMographMotion(comp, layer);
       mographKey(opacity, start, 100);
       if (fullFrame) return;
-      var offsetX = ((order % 2 === 0) ? -1 : 1) * comp.width * (0.045 + Math.min(0.035, energy * 0.03));
-      var offsetY = ((order % 3) - 1) * comp.height * 0.035;
+      var textLayer = name.indexOf("MOGRAPH:") !== -1 || name.indexOf("JP Label") !== -1;
+      var distanceX = comp.width * (textLayer ? 0.026 : 0.016) * (0.8 + energy * 0.35);
+      var distanceY = comp.height * (textLayer ? 0.024 : 0.014) * (0.8 + energy * 0.35);
+      var enterSign = purpose === "setup" ? 1 : purpose === "payoff" ? -1 : 0;
+      var offsetX = purpose === "payoff" ? -distanceX : purpose === "setup" ? distanceX : 0;
+      var offsetY = purpose === "cta" ? distanceY : enterSign * distanceY;
+      var boundedTarget = boundedPoint(targetPosition, comp, safeMargin);
+      var boundedStart = boundedPoint([boundedTarget[0] + offsetX, boundedTarget[1] + offsetY], comp, safeMargin);
+      var boundedImpact = boundedPoint([boundedTarget[0] - offsetX * 0.18, boundedTarget[1] - offsetY * 0.18], comp, safeMargin);
       if (name.indexOf("Transition Sweep") !== -1) {
         mographKey(position, start, [-comp.width * 0.12, targetPosition[1]]);
         mographKey(position, settle, [comp.width * 1.12, targetPosition[1]]);
         return;
       }
       if (name.indexOf("Speed") !== -1 || name.indexOf("Spark") !== -1) {
-        mographKey(position, start, [targetPosition[0] - offsetX * 1.8, targetPosition[1] - offsetY]);
-        mographKey(position, impact, targetPosition);
-        mographKey(position, accent, [targetPosition[0] + offsetX * 0.35, targetPosition[1]]);
-        mographKey(position, settle, targetPosition);
+        mographKey(position, start, boundedStart);
+        mographKey(position, impact, boundedTarget);
+        mographKey(position, accent, boundedImpact);
+        mographKey(position, settle, boundedTarget);
         mographKey(rotation, start, targetRotation - 12);
         mographKey(rotation, impact, targetRotation + 5);
         mographKey(rotation, settle, targetRotation);
@@ -370,14 +430,14 @@
         mographKey(scale, start, [25, 25, targetScale[2]]);
         mographKey(scale, impact, [125, 125, targetScale[2]]);
         mographKey(scale, settle, targetScale);
-        mographKey(position, start, [targetPosition[0] + offsetX, targetPosition[1] + offsetY]);
-        mographKey(position, settle, targetPosition);
+        mographKey(position, start, boundedStart);
+        mographKey(position, settle, boundedTarget);
         mographKey(scale, accent, [targetScale[0] * 1.12, targetScale[1] * 1.12, targetScale[2]]);
         mographKey(scale, settle + Math.min(0.2, span * 0.06), targetScale);
       } else {
-        mographKey(position, start, [targetPosition[0] + offsetX, targetPosition[1] + offsetY]);
-        mographKey(position, impact, [targetPosition[0] - offsetX * 0.18, targetPosition[1] - offsetY * 0.2]);
-        mographKey(position, settle, targetPosition);
+        mographKey(position, start, boundedStart);
+        mographKey(position, impact, boundedImpact);
+        mographKey(position, settle, boundedTarget);
         mographKey(scale, start, [targetScale[0] * 0.84, targetScale[1] * 0.84, targetScale[2]]);
         mographKey(scale, impact, [targetScale[0] * 1.08, targetScale[1] * 1.08, targetScale[2]]);
         mographKey(scale, settle, targetScale);
@@ -401,6 +461,8 @@
     var accent = colorToRgb(args.accent_color || [0.2, 0.65, 1]);
     var white = colorToRgb(args.text_color || [1, 1, 1]);
     var font = args.font_family || "Arial Bold";
+    var safeMargin = Number(args.safe_margin || 100);
+    var layout = sceneLayout(comp, String(args.scene_purpose || ""), safeMargin);
     var prefix = args.scene_id ? String(args.scene_id) + " | " : "";
     var start = Number(args.start || 0);
     var end = Number(args.end || comp.duration);
@@ -418,7 +480,7 @@
       if (subtitle) made.push(makeTemplateText(comp, subtitle, prefix + "MOGRAPH: Statistic Label", comp.width / 2, comp.height * 0.62, Number(args.subtitle_size || 42), white, start, end, font));
     } else if (id === "quote-card") {
       made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: Quote Background", primary, comp.width * 0.84, comp.height * 0.48, comp.width / 2, comp.height / 2, start, end));
-      made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: Quote", comp.width / 2, comp.height / 2, Number(args.font_size || 58), white, start, end, font));
+      made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: Quote", layout.headlineX, layout.headlineY, Number(args.font_size || 58), white, start, end, font));
     } else if (id === "subscribe") {
       made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: Subscribe Accent", accent, comp.width * 0.38, comp.height * 0.1, comp.width * 0.78, comp.height * 0.86, start, end));
       made.push(makeTemplateText(comp, text || "Subscribe", prefix + "MOGRAPH: Subscribe Text", comp.width * 0.78, comp.height * 0.86, Number(args.font_size || 42), white, start, end, font));
@@ -434,10 +496,10 @@
     }
     if (style === "japanese-pop") {
       made.push(makeShapeRect(comp, prefix + "JP Transition Sweep", accent, comp.width * 0.06, comp.height * 1.2, -comp.width * 0.08, comp.height / 2, start, end, 0, 0));
-      made = made.concat(makeJapaneseDecor(comp, prefix, String(args.scene_purpose || ""), primary, accent, white, start, end, font));
+      made = made.concat(makeJapaneseDecor(comp, prefix, String(args.scene_purpose || ""), primary, accent, white, start, end, font, safeMargin));
     }
     for (var mi = 0; mi < made.length; mi++) {
-      if (style === "japanese-pop") animateMographLayer(made[mi], start, end, String(args.transition || "fade"), mi, String(args.scene_purpose || ""), comp, Number(args.energy || 0.86));
+      if (style === "japanese-pop") animateMographLayer(made[mi], start, end, String(args.transition || "fade"), mi, String(args.scene_purpose || ""), comp, Number(args.energy || 0.86), safeMargin);
       else {
         fadeLayer(made[mi], start, end, Number(args.fade_duration === undefined ? 0.25 : args.fade_duration), !!args.hold_end);
         applyMotionEntrance(made[mi], start, String(args.transition || "fade"), Number(args.fade_duration || 0.25), comp);

@@ -1021,6 +1021,7 @@ export function registerTools(server: McpServer): void {
             accent_color: finalBlueprint.brand.accentColor,
             text_color: finalBlueprint.brand.secondaryColor,
             font_family: finalBlueprint.brand.fontFamily,
+            safe_margin: finalBlueprint.brand.safeMargin,
             font_size: Math.round(96 * finalBlueprint.visualGrammar.titleScale),
             fade_duration: scene.transition === "cut" ? 0 : 0.25,
             hold_end: scene.id === finalBlueprint.scenes[finalBlueprint.scenes.length - 1]?.id,
