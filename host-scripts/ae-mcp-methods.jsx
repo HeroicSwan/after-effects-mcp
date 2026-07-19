@@ -203,10 +203,11 @@
     try {
       var op = layer.property("ADBE Transform Group").property("ADBE Opacity");
       var d = Number(duration || 0.25);
+      if (d <= 0) { op.setValueAtTime(start, 100); return; }
       op.setValueAtTime(start, 0);
       op.setValueAtTime(Math.min(end, start + d), 100);
       op.setValueAtTime(Math.max(start + d, end - d), 100);
-      op.setValueAtTime(end, 0);
+      if (!arguments[4]) op.setValueAtTime(end, 0);
     } catch (e) {}
   }
 
@@ -268,7 +269,7 @@
       made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: " + id, comp.width / 2, comp.height / 2, Number(args.font_size || 84), white, start, end, font));
     }
     for (var mi = 0; mi < made.length; mi++) {
-      fadeLayer(made[mi], start, end, Number(args.fade_duration || 0.25));
+      fadeLayer(made[mi], start, end, Number(args.fade_duration === undefined ? 0.25 : args.fade_duration), !!args.hold_end);
       applyMotionEntrance(made[mi], start, String(args.transition || "fade"), Number(args.fade_duration || 0.25), comp);
     }
     try { if (comp.markerProperty) comp.markerProperty.setValueAtTime(start, new MarkerValue(id + " | " + (args.scene_id || "scene"))); } catch (e2) {}

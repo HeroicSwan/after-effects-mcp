@@ -995,7 +995,8 @@ export function registerTools(server: McpServer): void {
             text_color: finalBlueprint.brand.secondaryColor,
             font_family: finalBlueprint.brand.fontFamily,
             font_size: Math.round(96 * finalBlueprint.visualGrammar.titleScale),
-            fade_duration: scene.transition === "cut" ? 0.08 : 0.25,
+            fade_duration: scene.transition === "cut" ? 0 : 0.25,
+            hold_end: scene.id === finalBlueprint.scenes[finalBlueprint.scenes.length - 1]?.id,
             transition: scene.transition,
           }, `MCP: Build ${scene.id}`);
           layers.push({ scene: scene.id, purpose: scene.purpose, result: result.data });
