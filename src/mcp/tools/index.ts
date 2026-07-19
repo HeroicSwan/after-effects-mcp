@@ -984,6 +984,8 @@ export function registerTools(server: McpServer): void {
           const result = await call(HostMethods.MOTION_CREATE_TEMPLATE, {
             comp_name: finalBlueprint.compName,
             scene_id: scene.id,
+            scene_purpose: scene.purpose,
+            visual_style: "japanese-pop",
             template_id: scene.templateId,
             text: scene.title,
             title: scene.title,

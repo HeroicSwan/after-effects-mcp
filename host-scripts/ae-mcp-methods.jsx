@@ -199,6 +199,85 @@
     return l;
   }
 
+  function makeShapeRect(comp, name, color, width, height, x, y, inPoint, outPoint, roundness, rotation) {
+    var l = comp.layers.addShape();
+    l.name = name;
+    var contents = l.property("ADBE Root Vectors Group");
+    var rect = contents.addProperty("ADBE Vector Shape - Rect");
+    rect.property("ADBE Vector Rect Size").setValue([Number(width), Number(height)]);
+    rect.property("ADBE Vector Rect Roundness").setValue(Number(roundness || 0));
+    var fill = contents.addProperty("ADBE Vector Graphic - Fill");
+    fill.property("ADBE Vector Fill Color").setValue(colorToRgb(color));
+    fill.property("ADBE Vector Fill Opacity").setValue(100);
+    l.property("ADBE Transform Group").property("ADBE Position").setValue([Number(x), Number(y)]);
+    if (rotation !== undefined) l.property("ADBE Transform Group").property("ADBE Rotate Z").setValue(Number(rotation));
+    l.inPoint = Number(inPoint || 0);
+    l.outPoint = Number(outPoint || comp.duration);
+    return l;
+  }
+
+  function makeShapeCircle(comp, name, color, size, x, y, inPoint, outPoint, strokeColor, strokeWidth) {
+    var l = comp.layers.addShape();
+    l.name = name;
+    var contents = l.property("ADBE Root Vectors Group");
+    var ellipse = contents.addProperty("ADBE Vector Shape - Ellipse");
+    ellipse.property("ADBE Vector Ellipse Size").setValue([Number(size), Number(size)]);
+    if (strokeColor) {
+      var stroke = contents.addProperty("ADBE Vector Graphic - Stroke");
+      stroke.property("ADBE Vector Stroke Color").setValue(colorToRgb(strokeColor));
+      stroke.property("ADBE Vector Stroke Width").setValue(Number(strokeWidth || 8));
+      stroke.property("ADBE Vector Stroke Opacity").setValue(100);
+    } else {
+      var fill = contents.addProperty("ADBE Vector Graphic - Fill");
+      fill.property("ADBE Vector Fill Color").setValue(colorToRgb(color));
+      fill.property("ADBE Vector Fill Opacity").setValue(100);
+    }
+    l.property("ADBE Transform Group").property("ADBE Position").setValue([Number(x), Number(y)]);
+    l.inPoint = Number(inPoint || 0);
+    l.outPoint = Number(outPoint || comp.duration);
+    return l;
+  }
+
+  function makeJapaneseDecor(comp, prefix, purpose, primary, accent, white, start, end, font) {
+    var made = [];
+    var w = comp.width;
+    var h = comp.height;
+    var dark = primary;
+    var pink = accent;
+    if (purpose === "hook") {
+      made.push(makeShapeCircle(comp, prefix + "JP Pop Sun", pink, h * 0.24, w * 0.14, h * 0.18, start, end));
+      made.push(makeShapeCircle(comp, prefix + "JP Pop Ring", null, h * 0.34, w * 0.86, h * 0.76, start, end, white, 10));
+      made.push(makeShapeRect(comp, prefix + "JP Speed Line A", white, w * 0.18, 14, w * 0.82, h * 0.18, start, end, 7, -18));
+      made.push(makeShapeRect(comp, prefix + "JP Speed Line B", pink, w * 0.12, 10, w * 0.9, h * 0.25, start, end, 5, -18));
+      made.push(makeTemplateText(comp, "ポップ / 01", prefix + "JP Label", w * 0.13, h * 0.11, 28, white, start, end, font));
+    } else if (purpose === "setup") {
+      var i;
+      for (i = 0; i < 7; i++) made.push(makeShapeRect(comp, prefix + "JP Rhythm Bar " + i, i % 2 ? white : pink, 22, h * (0.12 + i * 0.018), w * (0.12 + i * 0.045), h * 0.86, start, end, 11, -8));
+      made.push(makeShapeCircle(comp, prefix + "JP Rhythm Dot", pink, 46, w * 0.88, h * 0.16, start, end));
+      made.push(makeTemplateText(comp, "リズム / 02", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+    } else if (purpose === "explanation") {
+      made.push(makeShapeRect(comp, prefix + "JP Data Rail", white, w * 0.22, 12, w * 0.17, h * 0.76, start, end, 6, 0));
+      made.push(makeShapeRect(comp, prefix + "JP Data Rail Accent", pink, w * 0.12, 12, w * 0.83, h * 0.76, start, end, 6, 0));
+      made.push(makeShapeCircle(comp, prefix + "JP Data Dot A", pink, 34, w * 0.12, h * 0.25, start, end));
+      made.push(makeShapeCircle(comp, prefix + "JP Data Dot B", white, 22, w * 0.88, h * 0.35, start, end));
+      made.push(makeTemplateText(comp, "キャッチ / 03", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+    } else if (purpose === "payoff") {
+      made.push(makeShapeCircle(comp, prefix + "JP Payoff Ring", null, h * 0.48, w * 0.5, h * 0.5, start, end, pink, 12));
+      made.push(makeShapeRect(comp, prefix + "JP Payoff Corner A", white, 90, 18, w * 0.12, h * 0.22, start, end, 9, 35));
+      made.push(makeShapeRect(comp, prefix + "JP Payoff Corner B", pink, 90, 18, w * 0.88, h * 0.78, start, end, 9, 35));
+      made.push(makeShapeCircle(comp, prefix + "JP Payoff Dot A", white, 30, w * 0.18, h * 0.78, start, end));
+      made.push(makeShapeCircle(comp, prefix + "JP Payoff Dot B", pink, 42, w * 0.82, h * 0.22, start, end));
+      made.push(makeTemplateText(comp, "すき / 04", prefix + "JP Label", w * 0.13, h * 0.14, 28, white, start, end, font));
+    } else if (purpose === "cta") {
+      made.push(makeShapeRect(comp, prefix + "JP CTA Button", pink, w * 0.32, 92, w * 0.5, h * 0.84, start, end, 46, 0));
+      made.push(makeShapeCircle(comp, prefix + "JP CTA Orb", white, 150, w * 0.14, h * 0.75, start, end));
+      made.push(makeShapeRect(comp, prefix + "JP CTA Spark A", pink, 90, 14, w * 0.84, h * 0.19, start, end, 7, 45));
+      made.push(makeShapeRect(comp, prefix + "JP CTA Spark B", white, 90, 14, w * 0.84, h * 0.19, start, end, 7, -45));
+      made.push(makeTemplateText(comp, "またね / 05", prefix + "JP Label", w * 0.13, h * 0.14, 28, pink, start, end, font));
+    }
+    return made;
+  }
+
   function fadeLayer(layer, start, end, duration) {
     try {
       var op = layer.property("ADBE Transform Group").property("ADBE Opacity");
@@ -242,6 +321,7 @@
     var start = Number(args.start || 0);
     var end = Number(args.end || comp.duration);
     var made = [];
+    var style = String(args.visual_style || "");
     if (id === "lower-third") {
       made.push(makeTemplateSolid(comp, prefix + "MOGRAPH: Lower Third Bar", accent, comp.width * 0.62, comp.height * 0.12, comp.width * 0.36, comp.height * 0.78, start, end));
       made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: Lower Third Title", comp.width * 0.38, comp.height * 0.75, Number(args.font_size || 54), white, start, end, font));
@@ -268,6 +348,7 @@
     } else {
       made.push(makeTemplateText(comp, text, prefix + "MOGRAPH: " + id, comp.width / 2, comp.height / 2, Number(args.font_size || 84), white, start, end, font));
     }
+    if (style === "japanese-pop") made = made.concat(makeJapaneseDecor(comp, prefix, String(args.scene_purpose || ""), primary, accent, white, start, end, font));
     for (var mi = 0; mi < made.length; mi++) {
       fadeLayer(made[mi], start, end, Number(args.fade_duration === undefined ? 0.25 : args.fade_duration), !!args.hold_end);
       applyMotionEntrance(made[mi], start, String(args.transition || "fade"), Number(args.fade_duration || 0.25), comp);
