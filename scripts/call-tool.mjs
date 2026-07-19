@@ -7,14 +7,17 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const name = process.argv[2];
 let args = {};
-if (process.argv[3]?.startsWith("{")) {
+if (process.argv[3]?.startsWith("@")) {
+  const fileValue = fs.readFileSync(path.resolve(process.argv[3].slice(1)), "utf8");
+  args = JSON.parse(fileValue);
+} else if (process.argv[3]?.startsWith("{")) {
   args = JSON.parse(process.argv[3]);
 } else {
   for (const pair of process.argv.slice(3)) {
     const [key, ...parts] = pair.split("=");
     const raw = parts.join("=");
     args[key] =
-      raw.startsWith("@") ? fs.readFileSync(path.resolve(raw.slice(1)), "utf8") :
+      raw.startsWith("@") ? (() => { const value = fs.readFileSync(path.resolve(raw.slice(1)), "utf8"); try { return JSON.parse(value); } catch { return value; } })() :
       raw === "true" ? true :
       raw === "false" ? false :
       raw !== "" && !Number.isNaN(Number(raw)) ? Number(raw) :

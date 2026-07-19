@@ -939,6 +939,7 @@ export function registerTools(server: McpServer): void {
       approved: z.boolean().optional().default(false),
       review_id: z.string().optional(),
       output_path: z.string().optional(),
+      render: z.boolean().optional().default(true).describe("Render a preview/final file after building. Set false to leave only the editable AE composition."),
     },
     async (args) => {
       try {
@@ -1008,10 +1009,10 @@ export function registerTools(server: McpServer): void {
         const frameSizes = frameData.frames.map((frame) => frame.bytes).filter((bytes) => bytes > 0);
         const qa = { all_frames_written: frameSizes.length === frameData.frames.length, frames_differ: new Set(frameSizes).size > 1, frame_count: frameData.frames.length, note: "Inspect the returned preview frames before final delivery." };
         const previewPath = args.output_path || path.join(getPreviewsRoot(), `${finalBlueprint.compName.replace(/[^\w\-]+/g, "_")}_${finalBlueprint.id}_preview.${finalBlueprint.render.format}`);
-        const renderResult = await call(HostMethods.COMP_RENDER, { comp_name: finalBlueprint.compName, output_path: previewPath, format: finalBlueprint.render.format, output_preset: finalBlueprint.render.preset || (finalBlueprint.render.format === "png" ? "PNG Sequence with Alpha" : finalBlueprint.render.format === "mov" ? "Lossless with Alpha" : "H.264 - Match Render Settings - 15 Mbps") }, `MCP: Render ${finalBlueprint.compName}`);
-        const review = createReview({ comp: finalBlueprint.compName, frames: frameData.frames, render: renderResult.data as { path: string; format: string; bytes?: number } });
+        const renderResult = args.render ? await call(HostMethods.COMP_RENDER, { comp_name: finalBlueprint.compName, output_path: previewPath, format: finalBlueprint.render.format, output_preset: finalBlueprint.render.preset || (finalBlueprint.render.format === "png" ? "PNG Sequence with Alpha" : finalBlueprint.render.format === "mov" ? "Lossless with Alpha" : "H.264 - Match Render Settings - 15 Mbps") }, `MCP: Render ${finalBlueprint.compName}`) : null;
+        const review = createReview({ comp: finalBlueprint.compName, frames: frameData.frames, render: renderResult ? renderResult.data as { path: string; format: string; bytes?: number } : undefined });
         if (prefs.workflowMode === "autonomous") decideReview(review.id, "approved", "Automatically approved by autonomous motion-graphics workflow after structural QA.");
-        return textResult({ status: prefs.workflowMode === "autonomous" ? "built_and_approved" : "preview_ready", workflow_mode: prefs.workflowMode, blueprint: finalBlueprint, audit: repaired.after, repairs: repaired.repairs, ae: created.data, layers, qa, render: renderResult.data, review });
+        return textResult({ status: prefs.workflowMode === "autonomous" ? "built_and_approved" : args.render ? "preview_ready" : "built_no_render", workflow_mode: prefs.workflowMode, blueprint: finalBlueprint, audit: repaired.after, repairs: repaired.repairs, ae: created.data, layers, qa, render: renderResult?.data || null, review });
       } catch (err) { return errorResult(err); }
     },
   );
@@ -1111,6 +1112,9 @@ export function registerTools(server: McpServer): void {
       caption_font_size: z.number().positive().optional(),
       safe_margin: z.number().nonnegative().optional(),
       aspect_ratio: z.enum(["16:9", "9:16", "1:1"]).optional(),
+      primary_color: z.array(z.number().min(0).max(1)).length(3).optional(),
+      secondary_color: z.array(z.number().min(0).max(1)).length(3).optional(),
+      accent_color: z.array(z.number().min(0).max(1)).length(3).optional(),
     },
     async (args) => {
       const current = getWorkflowPreferences();
@@ -1123,6 +1127,9 @@ export function registerTools(server: McpServer): void {
           captionFontSize: args.caption_font_size || current.brand.captionFontSize,
           safeMargin: args.safe_margin ?? current.brand.safeMargin,
           aspectRatio: args.aspect_ratio || current.brand.aspectRatio,
+          primaryColor: (args.primary_color || current.brand.primaryColor) as [number, number, number],
+          secondaryColor: (args.secondary_color || current.brand.secondaryColor) as [number, number, number],
+          accentColor: (args.accent_color || current.brand.accentColor) as [number, number, number],
         },
       }));
     },
