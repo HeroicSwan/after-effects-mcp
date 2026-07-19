@@ -1,0 +1,56 @@
+{
+  "name": "ae-mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for Adobe After Effects, motion graphics, editorial planning, QA, and rendering",
+  "type": "module",
+  "license": "MIT",
+  "author": "ae-mcp",
+  "bin": {
+    "ae-mcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "host-scripts",
+    "skills",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/index.js serve",
+    "health": "node dist/index.js health",
+    "ensure": "node dist/index.js ensure",
+    "install-bridge": "node dist/index.js install-bridge",
+    "setup-clients": "node dist/index.js setup-clients --providers all",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "after-effects",
+    "adobe",
+    "motion-graphics",
+    "model-context-protocol"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.25.28"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}
