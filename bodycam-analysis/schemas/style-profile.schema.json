@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "style-profile.schema.json",
+  "title": "Learned editing style",
+  "type": "object",
+  "required": ["version", "profile_id", "source_asset_ids", "format", "structure", "metrics", "rules"],
+  "properties": {
+    "version": { "type": "string" },
+    "profile_id": { "type": "string" },
+    "source_asset_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "format": {
+      "type": "object",
+      "required": ["width", "height", "aspect_ratio"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "aspect_ratio": { "type": "string" }
+      }
+    },
+    "structure": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "median_duration_seconds": { "type": "number", "minimum": 0 },
+        "median_hook_seconds": { "type": "number", "minimum": 0 },
+        "average_shot_length_seconds": { "type": "number", "minimum": 0 },
+        "cuts_per_minute": { "type": "number", "minimum": 0 },
+        "caption_coverage_ratio": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule", "evidence_asset_ids", "confidence"],
+        "properties": {
+          "rule": { "type": "string" },
+          "evidence_asset_ids": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    }
+  }
+}

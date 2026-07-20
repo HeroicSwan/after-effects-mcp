@@ -1,0 +1,24 @@
+{
+  "language": "en",
+  "processing": {
+    "local_only": true,
+    "base_visual_samples_per_second": 0.5,
+    "sample_around_scene_changes": true,
+    "detect_silence": true,
+    "detect_speakers": true,
+    "detect_faces": true,
+    "detect_license_plates": true
+  },
+  "confidence": {
+    "transcript_review_below": 0.8,
+    "visual_event_review_below": 0.75,
+    "redaction_review_below": 0.98,
+    "editorial_decision_review_below": 0.8
+  },
+  "editing": {
+    "require_source_timestamps": true,
+    "require_decision_reason": true,
+    "allow_generated_facts": false,
+    "preserve_original_media": true
+  }
+}

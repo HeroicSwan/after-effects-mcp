@@ -27,6 +27,7 @@ Build motion graphics, review cuts, and render YouTube-ready projects from an MC
 - **Motion system** — reusable brand-aware hook, lower-third, chapter, statistic, quote, subscribe, and end-screen templates
 - **One-shot motion videos** — canonical blueprints, visual grammar, coherence validation, deterministic scene builds, multi-frame QA, repair passes, and approval-aware previews
 - **Export presets** — automatic MP4, MOV, and PNG render presets with explicit output paths
+- **Body-cam workflow** — local reference analysis, transcripts, editor-style evidence, structured edit plans, and post-render YouTube-readiness scoring
 
 ## Requirements
 
@@ -150,6 +151,27 @@ npm run build
 npm test
 npm run typecheck
 ```
+
+## Body-cam analysis and output evaluation
+
+The [`bodycam-analysis/`](bodycam-analysis/) subsystem turns raw and reference
+media into structured evidence for the After Effects MCP. It inventories and
+transcribes footage locally, separates likely editor-added narration from source
+audio, measures cuts and dead time, and generates reviewable JSON contracts.
+
+After an edit is rendered, its evaluator measures technical delivery, audio,
+pacing, and opening structure. An editorial review then scores hook quality,
+story clarity, polish, and documentary context. Privacy, graphic violence,
+factual grounding, and media rights remain hard publish gates.
+
+```bash
+cd bodycam-analysis
+python scripts/full_analysis.py "C:\path\reference-video.mp4"
+python scripts/evaluate_output.py "C:\path\finished-edit.mp4"
+```
+
+See [the body-cam analysis guide](bodycam-analysis/README.md) for the data
+layout, generated artifacts, and final-score workflow.
 
 Before publishing changes, run the full local release check described in [the installation guide](docs/INSTALLATION.md).
 

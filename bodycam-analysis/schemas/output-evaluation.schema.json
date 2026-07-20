@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "output-evaluation.schema.json",
+  "title": "Rendered video YouTube-readiness evaluation",
+  "type": "object",
+  "required": [
+    "version",
+    "evaluation_id",
+    "asset_id",
+    "created_at",
+    "score",
+    "decision",
+    "categories",
+    "evidence",
+    "findings",
+    "publish_gates"
+  ],
+  "properties": {
+    "version": { "type": "string" },
+    "evaluation_id": { "type": "string" },
+    "asset_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "score": {
+      "type": "object",
+      "required": [
+        "automated_earned",
+        "automated_possible",
+        "editorial_earned",
+        "editorial_possible",
+        "final"
+      ],
+      "properties": {
+        "automated_earned": { "type": "number", "minimum": 0, "maximum": 55 },
+        "automated_possible": { "const": 55 },
+        "editorial_earned": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 45
+        },
+        "editorial_possible": { "const": 45 },
+        "final": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": ["status", "grade", "blocking_reasons"],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending_editorial_review",
+            "pending_publish_gates",
+            "ready",
+            "revise",
+            "not_ready",
+            "blocked"
+          ]
+        },
+        "grade": { "type": ["string", "null"] },
+        "blocking_reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "score", "possible", "status", "notes"],
+        "properties": {
+          "id": { "type": "string" },
+          "score": { "type": ["number", "null"] },
+          "possible": { "type": "number", "minimum": 0 },
+          "status": { "enum": ["measured", "reviewed", "pending"] },
+          "notes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "evidence": { "type": "object" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "category", "message", "recommendation"],
+        "properties": {
+          "severity": { "enum": ["critical", "high", "medium", "low"] },
+          "category": { "type": "string" },
+          "message": { "type": "string" },
+          "timestamp": { "type": ["number", "null"], "minimum": 0 },
+          "recommendation": { "type": "string" }
+        }
+      }
+    },
+    "publish_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status", "notes"],
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "enum": ["pass", "fail", "pending"] },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}
