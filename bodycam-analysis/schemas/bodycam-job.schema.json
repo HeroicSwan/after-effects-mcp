@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bodycam-job.schema.json",
+  "title": "Body-cam editing job",
+  "type": "object",
+  "required": [
+    "version",
+    "job_id",
+    "title",
+    "created_at",
+    "status",
+    "inputs",
+    "target",
+    "analysis",
+    "review"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "0.1" },
+    "job_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$"
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "status": {
+      "enum": [
+        "created",
+        "analyzing",
+        "timeline_ready",
+        "timeline_approved",
+        "planning",
+        "editing",
+        "rendering",
+        "reviewing",
+        "complete",
+        "blocked"
+      ]
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["bodycam", "narration", "case_info"],
+      "properties": {
+        "bodycam": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mediaInput" }
+        },
+        "narration": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mediaInput" }
+        },
+        "case_info": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "kind"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "kind": {
+                "enum": ["notes", "report", "public_record", "link", "other"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": ["platform", "width", "height", "frame_rate"],
+      "properties": {
+        "platform": { "const": "youtube" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "frame_rate": { "type": "number", "exclusiveMinimum": 0 },
+        "duration_target_seconds": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "required": ["state", "config", "transcript", "raw_timeline"],
+      "properties": {
+        "state": {
+          "enum": ["not_started", "running", "complete", "failed"]
+        },
+        "config": { "type": "string", "minLength": 1 },
+        "transcript": { "type": ["string", "null"] },
+        "raw_timeline": { "type": ["string", "null"] },
+        "analyzed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "review": {
+      "type": "object",
+      "required": ["timeline", "edit_build_allowed"],
+      "properties": {
+        "timeline": {
+          "type": "object",
+          "required": ["status", "reviewer", "reviewed_at", "notes"],
+          "properties": {
+            "status": { "enum": ["pending", "approved", "rejected"] },
+            "reviewer": { "type": ["string", "null"] },
+            "reviewed_at": { "type": ["string", "null"], "format": "date-time" },
+            "notes": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "edit_build_allowed": { "type": "boolean" }
+      }
+    }
+  },
+  "$defs": {
+    "mediaInput": {
+      "type": "object",
+      "required": ["asset_id", "path", "role"],
+      "properties": {
+        "asset_id": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "role": { "enum": ["primary", "secondary", "narration"] }
+      }
+    }
+  }
+}

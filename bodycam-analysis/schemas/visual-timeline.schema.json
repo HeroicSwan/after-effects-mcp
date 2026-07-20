@@ -6,7 +6,13 @@
   "required": ["version", "asset_id", "events"],
   "properties": {
     "version": { "type": "string" },
+    "job_id": { "type": "string" },
     "asset_id": { "type": "string" },
+    "source_path": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "duration_seconds": { "type": "number", "minimum": 0 },
+    "analyzer": { "type": "object" },
+    "summary": { "type": "object" },
     "events": {
       "type": "array",
       "items": {
@@ -21,6 +27,7 @@
           "review_required"
         ],
         "properties": {
+          "event_id": { "type": "string" },
           "start": { "type": "number", "minimum": 0 },
           "end": { "type": "number", "minimum": 0 },
           "event_type": {
@@ -41,9 +48,11 @@
             "minItems": 1
           },
           "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-          "review_required": { "type": "boolean" }
+          "review_required": { "type": "boolean" },
+          "source": { "type": "string" }
         }
       }
-    }
+    },
+    "review": { "type": "object" }
   }
 }

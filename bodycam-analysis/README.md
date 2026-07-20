@@ -11,6 +11,36 @@ The system keeps three things separate:
 
 Source media is ignored by Git and should remain unchanged.
 
+## Create a body-cam job
+
+Create one isolated job per incident:
+
+```powershell
+python scripts/create_job.py incident-001 --video "C:\path\raw-bodycam.mp4"
+```
+
+You can omit `--video` and instead place exactly one source video in
+`jobs/incident-001/inputs/bodycam/`. Job folders keep inputs, generated analysis,
+edit plans, renders, reviews, temporary files, and logs separate. Local jobs and
+their media are ignored by Git.
+
+Build the evidence-first raw timeline:
+
+```powershell
+python scripts/analyze_raw.py jobs/incident-001
+```
+
+The analyzer writes a normalized transcript and `analysis/raw-timeline.json`.
+It detects evidence such as speech, command-language cues, silence, audio-energy
+spikes, visual discontinuities, low-light or blurred footage, elevated motion,
+and possible visible faces. Ambiguous detections are marked for review. The job
+remains locked from edit building until its timeline is approved.
+
+Install `requirements.txt` before the first run. The speech pass uses
+`faster-whisper`; its selected model is downloaded and cached on first use.
+Speaker separation and license-plate detection remain disabled until dedicated
+detectors are connected.
+
 ## Add reference videos
 
 Drop files into the folder that describes what they teach:

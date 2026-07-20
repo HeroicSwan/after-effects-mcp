@@ -5,9 +5,9 @@
     "base_visual_samples_per_second": 0.5,
     "sample_around_scene_changes": true,
     "detect_silence": true,
-    "detect_speakers": true,
+    "detect_speakers": false,
     "detect_faces": true,
-    "detect_license_plates": true
+    "detect_license_plates": false
   },
   "confidence": {
     "transcript_review_below": 0.8,
