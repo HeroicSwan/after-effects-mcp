@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "edit-plan.schema.json",
+  "title": "After Effects edit plan",
+  "type": "object",
+  "required": ["version", "plan_id", "format", "duration_target_seconds", "clips", "audio", "review"],
+  "properties": {
+    "version": { "type": "string" },
+    "plan_id": { "type": "string" },
+    "format": {
+      "type": "object",
+      "required": ["width", "height", "frame_rate"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "frame_rate": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "duration_target_seconds": { "type": "number", "exclusiveMinimum": 0 },
+    "clips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "asset_id",
+          "source_start",
+          "source_end",
+          "timeline_start",
+          "role",
+          "reason",
+          "confidence",
+          "review_required"
+        ],
+        "properties": {
+          "asset_id": { "type": "string" },
+          "source_start": { "type": "number", "minimum": 0 },
+          "source_end": { "type": "number", "minimum": 0 },
+          "timeline_start": { "type": "number", "minimum": 0 },
+          "role": { "type": "string" },
+          "reason": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "review_required": { "type": "boolean" }
+        }
+      }
+    },
+    "audio": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["asset_id", "source_start", "source_end", "timeline_start", "role", "gain_db"],
+        "properties": {
+          "asset_id": { "type": "string" },
+          "source_start": { "type": "number", "minimum": 0 },
+          "source_end": { "type": "number", "minimum": 0 },
+          "timeline_start": { "type": "number", "minimum": 0 },
+          "role": { "enum": ["bodycam", "narration", "music", "effect"] },
+          "gain_db": { "type": "number" }
+        }
+      }
+    },
+    "captions": { "type": "array" },
+    "redactions": { "type": "array" },
+    "graphics": { "type": "array" },
+    "review": {
+      "type": "object",
+      "required": ["required", "reasons"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

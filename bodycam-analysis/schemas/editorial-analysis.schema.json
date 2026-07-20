@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "editorial-analysis.schema.json",
+  "title": "Editorial breakdown",
+  "type": "object",
+  "required": [
+    "version",
+    "asset_id",
+    "duration_seconds",
+    "summary",
+    "cuts",
+    "silences",
+    "speech_segments",
+    "voiceover_intervals",
+    "excluded_source_audio"
+  ],
+  "properties": {
+    "version": { "type": "string" },
+    "asset_id": { "type": "string" },
+    "duration_seconds": { "type": "number", "minimum": 0 },
+    "summary": {
+      "type": "object",
+      "required": [
+        "total_cuts",
+        "editorial_cuts",
+        "cuts_per_minute_during_voiceover",
+        "voiceover_duration_seconds",
+        "source_audio_excluded_seconds"
+      ],
+      "properties": {
+        "total_cuts": { "type": "integer", "minimum": 0 },
+        "editorial_cuts": { "type": "integer", "minimum": 0 },
+        "cuts_per_minute_during_voiceover": { "type": "number", "minimum": 0 },
+        "voiceover_duration_seconds": { "type": "number", "minimum": 0 },
+        "source_audio_excluded_seconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "cuts": { "type": "array" },
+    "silences": { "type": "array" },
+    "speech_segments": { "type": "array" },
+    "voiceover_intervals": { "type": "array" },
+    "excluded_source_audio": { "type": "array" },
+    "contact_sheets": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

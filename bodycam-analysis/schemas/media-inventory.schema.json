@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "media-inventory.schema.json",
+  "title": "Media inventory",
+  "type": "object",
+  "required": ["version", "generated_at", "media_root", "asset_count", "assets"],
+  "properties": {
+    "version": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "media_root": { "type": "string" },
+    "asset_count": { "type": "integer", "minimum": 0 },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "asset_id",
+          "category",
+          "relative_path",
+          "file_name",
+          "file_size_bytes",
+          "modified_at",
+          "format_name",
+          "duration_seconds",
+          "video",
+          "audio"
+        ],
+        "properties": {
+          "asset_id": { "type": "string" },
+          "category": { "type": "string" },
+          "relative_path": { "type": "string" },
+          "file_name": { "type": "string" },
+          "file_size_bytes": { "type": "integer", "minimum": 0 },
+          "modified_at": { "type": "string", "format": "date-time" },
+          "format_name": { "type": "string" },
+          "duration_seconds": { "type": "number", "minimum": 0 },
+          "bit_rate": { "type": ["integer", "null"], "minimum": 0 },
+          "video": {
+            "type": ["object", "null"],
+            "properties": {
+              "codec": { "type": "string" },
+              "width": { "type": "integer", "minimum": 1 },
+              "height": { "type": "integer", "minimum": 1 },
+              "pixel_format": { "type": ["string", "null"] },
+              "frame_rate": { "type": ["number", "null"], "minimum": 0 }
+            },
+            "required": ["codec", "width", "height", "pixel_format", "frame_rate"]
+          },
+          "audio": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["index", "codec", "channels", "sample_rate", "language"],
+              "properties": {
+                "index": { "type": "integer", "minimum": 0 },
+                "codec": { "type": "string" },
+                "channels": { "type": ["integer", "null"], "minimum": 1 },
+                "sample_rate": { "type": ["integer", "null"], "minimum": 1 },
+                "language": { "type": ["string", "null"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

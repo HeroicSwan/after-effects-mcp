@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visual-timeline.schema.json",
+  "title": "Multimodal video timeline",
+  "type": "object",
+  "required": ["version", "asset_id", "events"],
+  "properties": {
+    "version": { "type": "string" },
+    "asset_id": { "type": "string" },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "event_type",
+          "description",
+          "evidence",
+          "confidence",
+          "review_required"
+        ],
+        "properties": {
+          "start": { "type": "number", "minimum": 0 },
+          "end": { "type": "number", "minimum": 0 },
+          "event_type": {
+            "enum": [
+              "scene",
+              "speech",
+              "sound",
+              "action",
+              "privacy",
+              "quality",
+              "editorial"
+            ]
+          },
+          "description": { "type": "string" },
+          "evidence": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "review_required": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "version": "0.1",
+  "ready_score": 85,
+  "revise_score": 70,
+  "reference_targets": {
+    "cuts_per_minute": 2.29,
+    "hook_cuts_first_20_seconds": 3
+  },
+  "audio": {
+    "silence_db": -35,
+    "minimum_silence_seconds": 0.5,
+    "long_silence_seconds": 2.0,
+    "preferred_loudness_lufs_min": -20,
+    "preferred_loudness_lufs_max": -12,
+    "maximum_true_peak_dbfs": -1
+  },
+  "visual": {
+    "adaptive_threshold": 3.2,
+    "minimum_content": 20,
+    "minimum_scene_seconds": 0.75,
+    "black_minimum_seconds": 0.5,
+    "freeze_minimum_seconds": 2.0
+  },
+  "editorial_categories": {
+    "hook_quality": 10,
+    "story_clarity": 15,
+    "editorial_polish": 10,
+    "context_and_integrity": 10
+  },
+  "publish_gates": [
+    "privacy_redaction",
+    "graphic_violence",
+    "factual_grounding",
+    "media_rights"
+  ]
+}

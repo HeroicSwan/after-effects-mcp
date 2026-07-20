@@ -1,0 +1,23 @@
+# Local reference media
+*.mp4
+*.mov
+*.mxf
+*.avi
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+
+# Generated analysis artifacts
+analysis/*
+!analysis/.gitkeep
+
+# Local speech models
+models/*.bin
+
+# Python
+__pycache__/
+*.pyc
